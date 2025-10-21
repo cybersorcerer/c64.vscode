@@ -1,0 +1,125 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Kick Assembler",
+  "scopeName": "source.kickass",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#directives" },
+    { "include": "#preprocessor" },
+    { "include": "#macros" },
+    { "include": "#labels" },
+    { "include": "#mnemonics" },
+    { "include": "#numbers" },
+    { "include": "#strings" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.kickass",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.kickass",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "directives": {
+      "patterns": [
+        {
+          "name": "keyword.control.directive.kickass",
+          "match": "\\b(\\.byte|\\.word|\\.dword|\\.text|\\.fill|\\.align|\\.pc|\\.pseudopc|\\.var|\\.eval|\\.const|\\.label|\\.namespace|\\.filenamespace|\\.struct|\\.enum|\\.errorif|\\.asserterror|\\.print|\\.printnow|\\.error|\\.import|\\.importonce|\\.plugin|\\.encoding|\\.disk|\\.file|\\.segment|\\.segmentdef|\\.segmentout)\\b"
+        }
+      ]
+    },
+    "preprocessor": {
+      "patterns": [
+        {
+          "name": "meta.preprocessor.kickass",
+          "match": "^\\s*#(define|undef|if|ifdef|ifndef|else|elif|endif|import|importonce)\\b"
+        }
+      ]
+    },
+    "macros": {
+      "patterns": [
+        {
+          "name": "entity.name.function.macro.kickass",
+          "match": "\\b(\\.macro|\\.function|\\.pseudocommand|\\.return)\\b"
+        }
+      ]
+    },
+    "labels": {
+      "patterns": [
+        {
+          "name": "entity.name.label.kickass",
+          "match": "^\\s*[A-Za-z_][A-Za-z0-9_]*:"
+        },
+        {
+          "name": "entity.name.label.local.kickass",
+          "match": "^\\s*![A-Za-z_][A-Za-z0-9_]*:"
+        }
+      ]
+    },
+    "mnemonics": {
+      "patterns": [
+        {
+          "name": "keyword.mnemonic.kickass",
+          "match": "\\b(adc|and|asl|bcc|bcs|beq|bit|bmi|bne|bpl|brk|bvc|bvs|clc|cld|cli|clv|cmp|cpx|cpy|dec|dex|dey|eor|inc|inx|iny|jmp|jsr|lda|ldx|ldy|lsr|nop|ora|pha|php|pla|plp|rol|ror|rti|rts|sbc|sec|sed|sei|sta|stx|sty|tax|tay|tsx|txa|txs|tya)\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hex.kickass",
+          "match": "\\$[0-9a-fA-F]+"
+        },
+        {
+          "name": "constant.numeric.binary.kickass",
+          "match": "%[01]+"
+        },
+        {
+          "name": "constant.numeric.decimal.kickass",
+          "match": "\\b[0-9]+"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.kickass",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.kickass",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.kickass",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.kickass",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.kickass",
+          "match": "[+\\-*/<>=!&|^~]"
+        }
+      ]
+    }
+  }
+}

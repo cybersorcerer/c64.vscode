@@ -1,0 +1,95 @@
+{
+  "name": "c64-vscode",
+  "displayName": "C64 Assembler",
+  "description": "C64 Assembler development with Kick Assembler, LSP support, and VICE emulator integration",
+  "version": "0.1.0",
+  "publisher": "cybersorcerer",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Debuggers",
+    "Other"
+  ],
+  "keywords": [
+    "c64",
+    "commodore 64",
+    "assembler",
+    "kick assembler",
+    "6502",
+    "vice"
+  ],
+  "activationEvents": [
+    "onLanguage:kickass"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "kickass",
+        "aliases": ["Kick Assembler", "kickass"],
+        "extensions": [".asm", ".s"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "kickass",
+        "scopeName": "source.kickass",
+        "path": "./syntaxes/kickass.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "c64.assemble",
+        "title": "C64: Assemble with Kick Assembler"
+      },
+      {
+        "command": "c64.run",
+        "title": "C64: Run in VICE Emulator"
+      },
+      {
+        "command": "c64.debug",
+        "title": "C64: Debug in VICE with Monitor"
+      }
+    ],
+    "configuration": {
+      "title": "C64 Assembler",
+      "properties": {
+        "c64.kickassJarPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to kickass.jar"
+        },
+        "c64.viceBinary": {
+          "type": "string",
+          "default": "x64",
+          "description": "VICE emulator binary (x64 or x64sc)"
+        },
+        "c64.kickassLsBinary": {
+          "type": "string",
+          "default": "kickass_ls",
+          "description": "Path to kickass_ls language server binary"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.0"
+  }
+}
