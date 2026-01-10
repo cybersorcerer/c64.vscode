@@ -1,15 +1,19 @@
 {
   "name": "c64-vscode",
-  "displayName": "C64 Assembler",
-  "description": "C64 Assembler development with Kick Assembler, LSP support, and VICE emulator integration",
+  "displayName": "C64 Assembler Development",
+  "description": "Complete C64 development environment with Kick Assembler, LSP support, VICE emulator, and C64 Ultimate integration",
   "version": "0.1.0",
   "publisher": "cybersorcerer",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cybersorcerer/c64.vscode"
+  },
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.85.0"
   },
   "categories": [
     "Programming Languages",
-    "Debuggers",
     "Other"
   ],
   "keywords": [
@@ -18,7 +22,8 @@
     "assembler",
     "kick assembler",
     "6502",
-    "vice"
+    "vice",
+    "c64 ultimate"
   ],
   "activationEvents": [
     "onLanguage:kickass"
@@ -28,39 +33,120 @@
     "languages": [
       {
         "id": "kickass",
-        "aliases": ["Kick Assembler", "kickass"],
-        "extensions": [".asm", ".s"],
+        "aliases": [
+          "Kick Assembler",
+          "kickass"
+        ],
+        "extensions": [
+          ".asm",
+          ".s"
+        ],
         "configuration": "./language-configuration.json"
-      }
-    ],
-    "grammars": [
-      {
-        "language": "kickass",
-        "scopeName": "source.kickass",
-        "path": "./syntaxes/kickass.tmLanguage.json"
       }
     ],
     "commands": [
       {
         "command": "c64.assemble",
-        "title": "C64: Assemble with Kick Assembler"
+        "title": "C64: Assemble with Kick Assembler",
+        "icon": "$(tools)"
       },
       {
         "command": "c64.run",
-        "title": "C64: Run in VICE Emulator"
+        "title": "C64: Run in VICE Emulator",
+        "icon": "$(play)"
       },
       {
-        "command": "c64.debug",
-        "title": "C64: Debug in VICE with Monitor"
+        "command": "c64.assembleAndRun",
+        "title": "C64: Assemble and Run",
+        "icon": "$(play-circle)"
+      },
+      {
+        "command": "c64u.uploadAndRun",
+        "title": "C64U: Assemble, Upload and Run on C64 Ultimate",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "c64u.fileBrowser",
+        "title": "C64U: File Browser",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "c64u.machineControl",
+        "title": "C64U: Machine Control",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "c64u.upload",
+        "title": "C64U: Upload File"
+      },
+      {
+        "command": "c64u.download",
+        "title": "C64U: Download File"
+      },
+      {
+        "command": "c64u.mkdir",
+        "title": "C64U: Create Directory"
+      },
+      {
+        "command": "c64u.remove",
+        "title": "C64U: Remove File/Directory"
+      },
+      {
+        "command": "c64u.move",
+        "title": "C64U: Move/Rename"
+      },
+      {
+        "command": "c64u.copy",
+        "title": "C64U: Copy File"
+      },
+      {
+        "command": "c64u.list",
+        "title": "C64U: List Directory"
+      },
+      {
+        "command": "c64u.fileInfo",
+        "title": "C64U: Show File Info"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "c64.assemble",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a",
+        "when": "editorLangId == kickass"
+      },
+      {
+        "command": "c64.run",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorLangId == kickass"
+      },
+      {
+        "command": "c64.assembleAndRun",
+        "key": "ctrl+shift+x",
+        "mac": "cmd+shift+x",
+        "when": "editorLangId == kickass"
+      },
+      {
+        "command": "c64u.uploadAndRun",
+        "key": "ctrl+shift+u",
+        "mac": "cmd+shift+u",
+        "when": "editorLangId == kickass"
+      },
+      {
+        "command": "c64u.fileBrowser",
+        "key": "ctrl+shift+b",
+        "mac": "cmd+shift+b",
+        "when": "editorLangId == kickass"
       }
     ],
     "configuration": {
-      "title": "C64 Assembler",
+      "title": "C64 Assembler Development",
       "properties": {
         "c64.kickassJarPath": {
           "type": "string",
           "default": "",
-          "description": "Path to kickass.jar"
+          "description": "Path to kickass.jar (leave empty to use PATH)"
         },
         "c64.viceBinary": {
           "type": "string",
@@ -71,6 +157,26 @@
           "type": "string",
           "default": "kickass_ls",
           "description": "Path to kickass_ls language server binary"
+        },
+        "c64u.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable C64 Ultimate integration"
+        },
+        "c64u.host": {
+          "type": "string",
+          "default": "localhost",
+          "description": "C64 Ultimate hostname or IP address"
+        },
+        "c64u.port": {
+          "type": "number",
+          "default": 80,
+          "description": "C64 Ultimate HTTP port"
+        },
+        "c64u.cliBinary": {
+          "type": "string",
+          "default": "c64u",
+          "description": "Path to c64u CLI binary"
         }
       }
     }
@@ -79,17 +185,19 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "lint": "eslint src --ext ts"
+    "lint": "eslint src --ext ts",
+    "package": "vsce package"
   },
   "devDependencies": {
-    "@types/node": "^18.0.0",
-    "@types/vscode": "^1.80.0",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "@vscode/vsce": "^2.22.0",
     "eslint": "^8.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.3.0"
   },
   "dependencies": {
-    "vscode-languageclient": "^9.0.0"
+    "vscode-languageclient": "^9.0.1"
   }
 }

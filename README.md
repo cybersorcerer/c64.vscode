@@ -1,155 +1,281 @@
-# C64 Assembler for Visual Studio Code
+# C64 Assembler Development for VS Code
 
-A comprehensive Visual Studio Code extension for Commodore 64 Assembler development using Kick Assembler, featuring LSP support, VICE emulator integration, and helpful development tools.
-
-Made with Love for the Retro Computing Community.
+Complete development environment for Commodore 64 Assembler programming with Kick Assembler, LSP support, VICE emulator integration, and C64 Ultimate hardware support.
 
 ## Features
 
-- **Syntax Highlighting**: Full TextMate grammar support for Kick Assembler syntax
-- **LSP Support**: Integration with kickass_ls language server for:
-  - Code completion
-  - Go to definition
-  - Find references
-  - Hover documentation
-  - Diagnostics and error checking
-  - Symbol navigation
-- **VICE Emulator Integration**: Build and run your programs directly in VICE
-- **Remote Monitor Support**: Debug your programs using VICE's remote monitor
-- **Quick Build**: Assemble your code with a single command
+### 🎯 **LSP-Based Syntax Highlighting**
+- **No static syntax files!** All syntax highlighting comes from the kickass_ls language server
+- Semantic tokens for accurate, context-aware highlighting
+- Real-time code analysis and diagnostics
+- Intelligent code completion
+
+### 🛠️ **Kick Assembler Integration**
+- Assemble `.asm` and `.s` files with Kick Assembler
+- Automatic error and warning detection in Problems panel
+- Quick compile with `Ctrl+Shift+A` (Cmd+Shift+A on Mac)
+- Output channel shows detailed assembly results
+
+### 🎮 **VICE Emulator Support**
+- Run programs directly in VICE emulator
+- Autostart mode for instant testing
+- `Ctrl+Shift+R` to run (Cmd+Shift+R on Mac)
+- `Ctrl+Shift+X` to assemble and run (Cmd+Shift+X on Mac)
+
+### 🌐 **C64 Ultimate Integration**
+Complete integration with C64 Ultimate hardware via the `c64u` CLI:
+
+#### File Browser
+- Interactive QuickPick-based file browser (similar to Telescope in Neovim)
+- Navigate C64 Ultimate filesystem
+- Download, upload, mount, and manage files
+- Support for .d64, .d71, .d81, .g64, .g71 disk images
+
+#### Commands
+- `Ctrl+Shift+U`: Assemble, upload and run on C64 Ultimate
+- `Ctrl+Shift+B`: Open file browser
+- Upload/download files
+- Create/delete directories
+- Mount disk images
+- Machine control (reset, reboot, pause, resume)
 
 ## Prerequisites
 
-Before using this extension, you need to install:
-
-1. **Kick Assembler** - Download from [http://www.theweb.dk/KickAssembler/](http://www.theweb.dk/KickAssembler/)
-2. **VICE Emulator** - Download from [https://vice-emu.sourceforge.io/](https://vice-emu.sourceforge.io/)
-3. **kickass_ls Language Server** - Build and install from [https://github.com/cybersorcerer/kickass_ls](https://github.com/cybersorcerer/kickass_ls)
-
-### Installing kickass_ls
-
-```bash
-git clone https://github.com/cybersorcerer/kickass_ls
-cd kickass_ls
-cargo build --release
-cp target/release/kickass_ls ~/.local/bin/
-```
-
-Make sure `~/.local/bin` is in your `$PATH`.
+- **VS Code** 1.85.0 or later
+- **Kick Assembler** JAR file ([kickass.jar](http://www.theweb.dk/KickAssembler/))
+- **kickass_ls** language server ([kickass_ls](https://github.com/cybersorcerer/kickass_ls))
+- **VICE** emulator (x64 or x64sc) ([VICE](https://vice-emu.sourceforge.io/))
+- **c64u CLI** (optional, for C64 Ultimate support) ([c64u](https://github.com/cybersorcerer/c64.nvim/tree/main/tools/c64u))
 
 ## Installation
 
-1. Install the extension from the VSCode Marketplace (or from .vsix file)
-2. Configure the extension settings (see Configuration below)
+### 1. Install the Extension
+
+```bash
+# From source (development)
+cd ~/path/to/c64.vscode
+npm install
+npm run compile
+```
+
+Then press F5 to launch the extension in a new VS Code window.
+
+### 2. Install Dependencies
+
+#### kickass_ls Language Server
+
+```bash
+# Install from releases
+# See: https://github.com/cybersorcerer/kickass_ls/releases
+
+# Or build from source
+cd ~/path/to/kickass_ls
+go build -o kickass_ls ./cmd/kickass_ls
+sudo mv kickass_ls /usr/local/bin/
+```
+
+#### c64u CLI (Optional)
+
+```bash
+# macOS
+curl -L -o c64u https://github.com/cybersorcerer/c64.nvim/releases/latest/download/c64u-darwin-amd64
+chmod +x c64u
+sudo mv c64u /usr/local/bin/
+
+# Linux
+curl -L -o c64u https://github.com/cybersorcerer/c64.nvim/releases/latest/download/c64u-linux-amd64
+chmod +x c64u
+sudo mv c64u /usr/local/bin/
+
+# Windows
+# Download: https://github.com/cybersorcerer/c64.nvim/releases/latest/download/c64u-windows-amd64.exe
+# Add to PATH
+```
 
 ## Configuration
 
-Open VSCode settings (File > Preferences > Settings) and configure:
+Open VS Code settings (Cmd+, or Ctrl+,) and configure:
 
 ### Required Settings
 
-- **c64.kickassJarPath**: Path to your kickass.jar file
-  ```json
-  "c64.kickassJarPath": "/path/to/KickAss.jar"
-  ```
+```json
+{
+  // Path to kickass.jar
+  "c64.kickassJarPath": "/path/to/kickass.jar",
 
-### Optional Settings
+  // VICE emulator binary
+  "c64.viceBinary": "x64",
 
-- **c64.viceBinary**: VICE emulator binary name (default: "x64")
-  ```json
-  "c64.viceBinary": "x64"
-  ```
-
-- **c64.kickassLsBinary**: kickass_ls language server binary (default: "kickass_ls")
-  ```json
+  // kickass_ls language server (if not in PATH)
   "c64.kickassLsBinary": "kickass_ls"
-  ```
+}
+```
+
+### C64 Ultimate Settings (Optional)
+
+```json
+{
+  // Enable C64 Ultimate integration
+  "c64u.enabled": true,
+
+  // C64 Ultimate hostname or IP
+  "c64u.host": "192.168.1.100",
+
+  // HTTP port (default: 80)
+  "c64u.port": 80,
+
+  // c64u CLI binary (if not in PATH)
+  "c64u.cliBinary": "c64u"
+}
+```
 
 ## Usage
 
-### Commands
+### Basic Workflow
 
-Access commands via Command Palette (Cmd/Ctrl+Shift+P):
+1. **Write code** in `.asm` or `.s` files
+   - Syntax highlighting works automatically via LSP
+   - Get real-time diagnostics and code analysis
 
-- **C64: Assemble with Kick Assembler** - Compile current .asm file
-- **C64: Run in VICE Emulator** - Assemble and run in VICE
-- **C64: Debug in VICE with Monitor** - Start VICE with remote monitor enabled
+2. **Assemble** with `Ctrl+Shift+A` (Cmd+Shift+A)
+   - View output in "Kick Assembler" output channel
+   - Errors appear in Problems panel
 
-### LSP Features
+3. **Run** with `Ctrl+Shift+R` (Cmd+Shift+R)
+   - Launches VICE with your program
 
-The extension automatically provides LSP features when editing `.asm` or `.s` files:
+4. **Or combine**: `Ctrl+Shift+X` (Cmd+Shift+X)
+   - Assembles and runs in one step
 
-- **Code Completion**: Press Ctrl+Space to trigger completion suggestions
-- **Go to Definition**: F12 or right-click > Go to Definition
-- **Find References**: Shift+F12 or right-click > Find All References
-- **Hover Information**: Hover over symbols to see documentation
-- **Diagnostics**: Errors and warnings appear inline and in the Problems panel
+### C64 Ultimate Workflow
 
-### Building and Running
+1. **Enable** C64 Ultimate in settings
+2. **Configure** host and port
+3. **Assemble and upload** with `Ctrl+Shift+U`
+   - Assembles locally
+   - Uploads to C64 Ultimate
+   - Runs on real hardware
 
-1. Open a Kick Assembler file (`.asm`)
-2. Press Cmd/Ctrl+Shift+P and run "C64: Assemble with Kick Assembler"
-3. Check the terminal for build output
-4. If successful, run "C64: Run in VICE Emulator" to test your program
+4. **Browse files** with `Ctrl+Shift+B`
+   - Navigate C64 Ultimate filesystem
+   - Mount disk images
+   - Download/upload files
+
+## Commands
+
+Access commands via Command Palette (Cmd+Shift+P or Ctrl+Shift+P):
+
+### General Commands
+- `C64: Assemble with Kick Assembler` - Compile current file
+- `C64: Run in VICE Emulator` - Run assembled program
+- `C64: Assemble and Run` - Compile and run
+
+### C64 Ultimate Commands
+- `C64U: Assemble, Upload and Run on C64 Ultimate` - Full workflow
+- `C64U: File Browser` - Interactive file browser
+- `C64U: Machine Control` - Reset, reboot, pause, resume
+- `C64U: Upload File` - Upload to C64 Ultimate
+- `C64U: Download File` - Download from C64 Ultimate
+- `C64U: Create Directory` - Make directory
+- `C64U: Remove File/Directory` - Delete with confirmation
+- `C64U: Move/Rename` - Move or rename files
+- `C64U: Copy File` - Copy file
+- `C64U: List Directory` - Show directory contents
+- `C64U: Show File Info` - Display file information
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+Shift+A` (Mac: Cmd+Shift+A) | Assemble with Kick Assembler |
+| `Ctrl+Shift+R` (Mac: Cmd+Shift+R) | Run in VICE |
+| `Ctrl+Shift+X` (Mac: Cmd+Shift+X) | Assemble and Run |
+| `Ctrl+Shift+U` (Mac: Cmd+Shift+U) | Upload and Run on C64U |
+| `Ctrl+Shift+B` (Mac: Cmd+Shift+B) | C64U File Browser |
 
 ## Language Server Features
 
 The kickass_ls language server provides:
 
-- **Zero Page Optimization**: Hints for using zero page addressing
-- **Branch Distance Validation**: Warnings for out-of-range branches
-- **Illegal Opcode Detection**: Warnings for illegal/undocumented opcodes
-- **Hardware Bug Detection**: Warnings for known C64 hardware bugs (JMP indirect bug)
-- **Memory Layout Analysis**: Stack warnings, ROM write warnings, I/O access detection
-- **Magic Number Detection**: Hints for hardcoded C64 addresses
-- **Dead Code Detection**: Warnings for unreachable code
-- **Style Guide Enforcement**: Hints for better code style
+- **Semantic Tokens**: Context-aware syntax highlighting
+- **Diagnostics**: Real-time error and warning detection
+- **Code Analysis**:
+  - Zero-page optimization hints
+  - Branch distance validation
+  - Illegal opcode detection
+  - Hardware bug detection (JMP indirect bug)
+  - Memory layout analysis
+  - Magic number detection
+  - Dead code detection
+  - Style guide enforcement
 
-## File Structure
+## File Browser
 
-```
-your-project/
-├── main.asm          # Your main assembly file
-├── utils.asm         # Additional source files
-└── build/            # Output directory (created by Kick Assembler)
-    └── main.prg      # Compiled program
-```
+The C64 Ultimate file browser provides a QuickPick-based interface:
+
+1. **Navigate**: Select folders to browse
+2. **Select files**: Choose files to see actions
+3. **Actions**:
+   - Download file
+   - Run PRG file
+   - Mount disk image (d64/d71/d81/g64/g71)
+   - Show file info
+   - Delete file
 
 ## Troubleshooting
 
-### LSP Not Starting
+### Language Server Not Starting
 
-1. Verify kickass_ls is installed: `which kickass_ls`
-2. Check VSCode Output panel (View > Output) and select "Kick Assembler Language Server"
-3. Ensure file extension is `.asm` or `.s`
+1. Check that `kickass_ls` is installed and in PATH
+2. Or configure absolute path in settings:
+   ```json
+   {
+     "c64.kickassLsBinary": "/usr/local/bin/kickass_ls"
+   }
+   ```
 
-### VICE Not Running
+### Assembly Fails
 
-1. Verify VICE is installed: `which x64`
-2. Check the configured `c64.viceBinary` setting
-3. Ensure the .prg file was created by the assembler
-
-### Assembler Errors
-
-1. Verify kickass.jar path in settings
+1. Verify `kickass.jar` path in settings
 2. Check that Java is installed: `java -version`
-3. Review terminal output for detailed error messages
+3. View detailed output in "Kick Assembler" output channel
 
-## Contributing
+### VICE Won't Start
 
-Contributions are welcome! Please visit the [GitHub repository](https://github.com/cybersorcerer/c64.vscode) to report issues or submit pull requests.
+1. Install VICE emulator
+2. Ensure `x64` or `x64sc` is in PATH
+3. Or configure in settings:
+   ```json
+   {
+     "c64.viceBinary": "/Applications/Vice/x64.app/Contents/MacOS/x64"
+   }
+   ```
+
+### C64 Ultimate Connection Issues
+
+1. Ping C64 Ultimate: `ping <host>`
+2. Test c64u CLI: `c64u --host <host> about`
+3. Check firewall settings
+4. Verify host and port in settings
+
+## Related Projects
+
+- [c64.nvim](https://github.com/cybersorcerer/c64.nvim) - Neovim plugin
+- [kickass_ls](https://github.com/cybersorcerer/kickass_ls) - Language server
+- [c64u CLI](https://github.com/cybersorcerer/c64.nvim/tree/main/tools/c64u) - C64 Ultimate CLI
 
 ## License
 
-ISC
+Apache 2.0
 
-## Acknowledgments
+## Credits
 
-- Kick Assembler by Mads Nielsen
-- VICE Emulator team
-- kickass_ls language server
-- The retro computing community
+- Built for the [Commodore C64 Ultimate](https://commodore.net)
+- Uses [Kick Assembler](http://www.theweb.dk/KickAssembler/)
+- Integrates with [VICE Emulator](https://vice-emu.sourceforge.io/)
+- LSP support via kickass_ls
 
----
+## Contributing
 
-**Enjoy coding for the Commodore 64!**
+Contributions welcome! Please submit issues and pull requests at:
+https://github.com/cybersorcerer/c64.vscode
