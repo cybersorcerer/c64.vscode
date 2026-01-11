@@ -62,25 +62,80 @@ export class KickassemblerService {
         const diagnostics: vscode.Diagnostic[] = [];
         const lines = output.split('\n');
 
-        // Parse Kick Assembler error/warning format:
-        // Error: file.asm:10: Error message here
-        // Warning: file.asm:10: Warning message here
-        const errorRegex = /^(Error|Warning):\s*(.+?):(\d+):\s*(.+)$/;
+        // Kick Assembler error formats:
+        // Format 1: (filename line:col) Error: message
+        // Example: (/path/to/file.asm 19:1) Error: Too few arguments
+        const format1Regex = /\(([^)]+)\s+(\d+):(\d+)\)\s*(Error|Warning):\s*(.+)/;
+
+        // Format 2: at line X, column Y in filename
+        // Example: at line 19, column 1 in file.asm
+        const format2Regex = /at line (\d+), column (\d+) in (.+)/;
+
+        // Format 3: filename:line: message
+        // Example: file.asm:10: Error message
+        const format3Regex = /^([^:]+):(\d+):\s*(.+)$/;
+
+        let lastError: string | undefined;
 
         for (const line of lines) {
-            const match = line.match(errorRegex);
+            let match;
+            let lineNum: number;
+            let col: number = 0;
+            let message: string;
+            let severity: vscode.DiagnosticSeverity = vscode.DiagnosticSeverity.Error;
+
+            // Try Format 1: (filename line:col) Error: message
+            match = line.match(format1Regex);
             if (match) {
-                const [, severity, file, lineNum, message] = match;
-                const lineNumber = parseInt(lineNum, 10) - 1; // VSCode uses 0-based line numbers
+                const [, , lineStr, colStr, severityStr, msg] = match;
+                lineNum = parseInt(lineStr, 10) - 1;
+                col = parseInt(colStr, 10) - 1;
+                message = msg;
+                lastError = message;
+                severity = severityStr.toLowerCase() === 'warning'
+                    ? vscode.DiagnosticSeverity.Warning
+                    : vscode.DiagnosticSeverity.Error;
 
                 const diagnostic = new vscode.Diagnostic(
-                    new vscode.Range(lineNumber, 0, lineNumber, Number.MAX_VALUE),
+                    new vscode.Range(lineNum, col, lineNum, Number.MAX_VALUE),
                     message,
-                    severity.toLowerCase() === 'error'
-                        ? vscode.DiagnosticSeverity.Error
-                        : vscode.DiagnosticSeverity.Warning
+                    severity
                 );
+                diagnostic.source = 'kickass';
+                diagnostics.push(diagnostic);
+                continue;
+            }
 
+            // Try Format 2: at line X, column Y in filename
+            match = line.match(format2Regex);
+            if (match) {
+                const [, lineStr, colStr] = match;
+                lineNum = parseInt(lineStr, 10) - 1;
+                col = parseInt(colStr, 10) - 1;
+                message = lastError || line;
+
+                const diagnostic = new vscode.Diagnostic(
+                    new vscode.Range(lineNum, col, lineNum, Number.MAX_VALUE),
+                    message,
+                    vscode.DiagnosticSeverity.Error
+                );
+                diagnostic.source = 'kickass';
+                diagnostics.push(diagnostic);
+                continue;
+            }
+
+            // Try Format 3: filename:line: message
+            match = line.match(format3Regex);
+            if (match) {
+                const [, , lineStr, msg] = match;
+                lineNum = parseInt(lineStr, 10) - 1;
+                message = msg;
+
+                const diagnostic = new vscode.Diagnostic(
+                    new vscode.Range(lineNum, 0, lineNum, Number.MAX_VALUE),
+                    message,
+                    vscode.DiagnosticSeverity.Error
+                );
                 diagnostic.source = 'kickass';
                 diagnostics.push(diagnostic);
             }
