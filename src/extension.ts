@@ -304,22 +304,46 @@ function autoDetectKickassFiles(context: vscode.ExtensionContext) {
         return kickassPatterns.some(pattern => pattern.test(text));
     };
 
-    // Set language for currently open documents
-    vscode.workspace.textDocuments.forEach(document => {
+    // Helper function to set language if needed
+    const checkAndSetLanguage = (document: vscode.TextDocument) => {
         if ((document.fileName.endsWith('.asm') || document.fileName.endsWith('.s')) &&
-            document.languageId !== 'kickass' &&
-            isKickassFile(document)) {
-            vscode.languages.setTextDocumentLanguage(document, 'kickass');
+            document.languageId !== 'kickass') {
+
+            // For .asm files, be more aggressive - check patterns
+            if (isKickassFile(document)) {
+                console.log(`Setting language to kickass for: ${document.fileName}`);
+                vscode.languages.setTextDocumentLanguage(document, 'kickass');
+            } else if (document.languageId === 'plaintext') {
+                // If it's plaintext but has .asm extension, assume kickass
+                console.log(`Defaulting plaintext .asm file to kickass: ${document.fileName}`);
+                vscode.languages.setTextDocumentLanguage(document, 'kickass');
+            }
         }
-    });
+    };
+
+    // Set language for currently open documents
+    vscode.workspace.textDocuments.forEach(checkAndSetLanguage);
 
     // Watch for newly opened documents
     context.subscriptions.push(
         vscode.workspace.onDidOpenTextDocument(document => {
-            if ((document.fileName.endsWith('.asm') || document.fileName.endsWith('.s')) &&
-                document.languageId !== 'kickass' &&
-                isKickassFile(document)) {
-                vscode.languages.setTextDocumentLanguage(document, 'kickass');
+            if (document.fileName.endsWith('.asm') || document.fileName.endsWith('.s')) {
+                console.log(`Opened file: ${document.fileName}, current language: ${document.languageId}`);
+
+                // Use setTimeout to ensure we run after VSCode's language detection
+                setTimeout(() => {
+                    checkAndSetLanguage(document);
+                }, 100);
+            }
+        })
+    );
+
+    // Also watch for when language changes (e.g., VSCode overrides our setting)
+    context.subscriptions.push(
+        vscode.workspace.onDidOpenTextDocument(document => {
+            // Immediate check
+            if (document.fileName.endsWith('.asm') || document.fileName.endsWith('.s')) {
+                checkAndSetLanguage(document);
             }
         })
     );
