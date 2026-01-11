@@ -22,11 +22,15 @@ export function activate(context: vscode.ExtensionContext) {
         c64uService = new C64UService();
     }
 
-    // Auto-detect and set language for .asm and .s files
-    autoDetectKickassFiles(context);
-
-    // Start Language Server
+    // Start Language Server first
     startLanguageServer(context);
+
+    // Auto-detect and set language for .asm and .s files
+    // Use setTimeout to ensure this runs after all initialization
+    setTimeout(() => {
+        console.log('Starting auto-detection for Kick Assembler files...');
+        autoDetectKickassFiles(context);
+    }, 500);
 
     // Register Kickassembler commands
     context.subscriptions.push(
