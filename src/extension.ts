@@ -22,6 +22,9 @@ export function activate(context: vscode.ExtensionContext) {
         c64uService = new C64UService();
     }
 
+    // Auto-detect and set language for .asm and .s files
+    autoDetectKickassFiles(context);
+
     // Start Language Server
     startLanguageServer(context);
 
@@ -265,6 +268,61 @@ function startLanguageServer(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(client);
+}
+
+function autoDetectKickassFiles(context: vscode.ExtensionContext) {
+    // Check if file contains Kick Assembler specific syntax
+    const isKickassFile = (document: vscode.TextDocument): boolean => {
+        const text = document.getText();
+        // Look for Kick Assembler specific directives or syntax
+        const kickassPatterns = [
+            // Kick Assembler specific features
+            /\.namespace/i,
+            /\.pseudocommand/i,
+            /\.macro/i,
+            /\.function/i,
+            /\.struct/i,
+            /\.enum/i,
+            /BasicUpstart/i,
+            // Common Kick Assembler directives
+            /\.encoding\s+/i,
+            /\.import\s+/i,
+            /\.importonce/i,
+            /\.file\s+/i,
+            /\.disk\s+/i,
+            /\.pc\s*=/,
+            /\.byte\s+/i,
+            /\.word\s+/i,
+            /\.text\s+/i,
+            /\.const\s+/i,
+            /\.var\s+/i,
+            /\.eval\s+/i,
+            // Kick Assembler specific operators
+            /BasicUpstart2/i,
+            /kickass/i
+        ];
+        return kickassPatterns.some(pattern => pattern.test(text));
+    };
+
+    // Set language for currently open documents
+    vscode.workspace.textDocuments.forEach(document => {
+        if ((document.fileName.endsWith('.asm') || document.fileName.endsWith('.s')) &&
+            document.languageId !== 'kickass' &&
+            isKickassFile(document)) {
+            vscode.languages.setTextDocumentLanguage(document, 'kickass');
+        }
+    });
+
+    // Watch for newly opened documents
+    context.subscriptions.push(
+        vscode.workspace.onDidOpenTextDocument(document => {
+            if ((document.fileName.endsWith('.asm') || document.fileName.endsWith('.s')) &&
+                document.languageId !== 'kickass' &&
+                isKickassFile(document)) {
+                vscode.languages.setTextDocumentLanguage(document, 'kickass');
+            }
+        })
+    );
 }
 
 function configureSemanticTokens() {
