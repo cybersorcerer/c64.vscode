@@ -146,8 +146,8 @@
       "properties": {
         "c64.kickassJarPath": {
           "type": "string",
-          "default": "",
-          "description": "Path to kickass.jar (leave empty to use PATH)"
+          "default": "/Applications/KickAssembler/KickAss.jar",
+          "description": "Path to kickass.jar"
         },
         "c64.viceBinary": {
           "type": "string",
