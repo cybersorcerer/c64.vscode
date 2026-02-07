@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
+import { getC64uPath, logBinaryResolution } from '../binaries';
 
 export interface C64UResult {
     success: boolean;
@@ -7,9 +8,25 @@ export interface C64UResult {
     error?: string;
 }
 
+// Extension path, set during activation
+let extensionPath: string = '';
+
+export function initC64UCli(extPath: string): void {
+    extensionPath = extPath;
+
+    // Log binary resolution at startup
+    const resolution = getC64uPath(extensionPath);
+    logBinaryResolution('c64u', resolution);
+}
+
+function getCliBinary(): string {
+    const resolution = getC64uPath(extensionPath);
+    return resolution.path;
+}
+
 export async function executeC64U(args: string[]): Promise<C64UResult> {
     const config = vscode.workspace.getConfiguration('c64u');
-    const cliBinary = config.get<string>('cliBinary') || 'c64u';
+    const cliBinary = getCliBinary();
     const host = config.get<string>('host');
     const port = config.get<number>('port');
 
@@ -46,7 +63,7 @@ export async function executeC64U(args: string[]): Promise<C64UResult> {
 
 export async function executeC64UJson<T>(args: string[]): Promise<T | null> {
     const config = vscode.workspace.getConfiguration('c64u');
-    const cliBinary = config.get<string>('cliBinary') || 'c64u';
+    const cliBinary = getCliBinary();
     const host = config.get<string>('host');
     const port = config.get<number>('port');
 
@@ -73,10 +90,18 @@ export async function executeC64UJson<T>(args: string[]): Promise<T | null> {
                 resolve(null);
             } else {
                 try {
-                    const result = JSON.parse(stdout);
-                    resolve(result);
+                    // Handle empty output (e.g., empty directory)
+                    const trimmedOutput = stdout.trim();
+                    if (trimmedOutput === '') {
+                        // Empty output means empty array for list commands
+                        resolve([] as T);
+                    } else {
+                        const result = JSON.parse(trimmedOutput);
+                        resolve(result);
+                    }
                 } catch (parseError) {
                     console.error('Failed to parse c64u JSON output:', parseError);
+                    console.error('Output was:', stdout);
                     resolve(null);
                 }
             }

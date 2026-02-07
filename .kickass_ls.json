@@ -1,0 +1,43 @@
+{
+  "kickass_ls": {
+    "warnUnusedLabels": false,
+    "zeroPageOptimization": {
+      "enabled": true,
+      "showHints": true
+    },
+    "branchDistanceValidation": {
+      "enabled": true,
+      "showWarnings": true
+    },
+    "illegalOpcodeDetection": {
+      "enabled": true,
+      "showWarnings": true
+    },
+    "hardwareBugDetection": {
+      "enabled": true,
+      "showWarnings": true,
+      "jmpIndirectBug": true
+    },
+    "memoryLayoutAnalysis": {
+      "enabled": true,
+      "showIOAccess": true,
+      "showStackWarnings": true,
+      "showROMWriteWarnings": false
+    },
+    "magicNumberDetection": {
+      "enabled": true,
+      "showHints": true,
+      "c64Addresses": true
+    },
+    "deadCodeDetection": {
+      "enabled": true,
+      "showWarnings": true
+    },
+    "styleGuideEnforcement": {
+      "enabled": false,
+      "showHints": false,
+      "upperCaseConstants": true,
+      "descriptiveLabels": true
+    }
+  }
+}

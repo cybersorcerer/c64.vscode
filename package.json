@@ -2,7 +2,7 @@
   "name": "c64-vscode",
   "displayName": "C64 Assembler Development",
   "description": "Complete C64 development environment with Kick Assembler, LSP support, VICE emulator, and C64 Ultimate integration",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "publisher": "cybersorcerer",
   "license": "Apache-2.0",
   "repository": {
@@ -26,11 +26,29 @@
     "c64 ultimate"
   ],
   "activationEvents": [
-    "onLanguage:kickass",
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "c64u-explorer",
+          "title": "C64 Ultimate",
+          "icon": "resources/c64-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "c64u-explorer": [
+        {
+          "id": "c64u.fileExplorer",
+          "name": "File System",
+          "contextualTitle": "C64 Ultimate File System",
+          "when": "c64u.enabled"
+        }
+      ]
+    },
     "languages": [
       {
         "id": "kickass",
@@ -43,6 +61,22 @@
           ".s"
         ],
         "configuration": "./language-configuration.json"
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "kickass",
+        "scopes": {
+          "mnemonic": ["entity.name.function"],
+          "directive": ["keyword.control"],
+          "preprocessor": ["keyword.control.directive"],
+          "macro": ["entity.name.function.macro"],
+          "pseudocommand": ["support.function"],
+          "function": ["entity.name.function"],
+          "label": ["entity.name.label"],
+          "number": ["constant.numeric"],
+          "variable": ["variable"]
+        }
       }
     ],
     "commands": [
@@ -107,6 +141,70 @@
       {
         "command": "c64u.fileInfo",
         "title": "C64U: Show File Info"
+      },
+      {
+        "command": "c64u.treeview.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "c64u.treeview.navigate",
+        "title": "Navigate"
+      },
+      {
+        "command": "c64u.treeview.delete",
+        "title": "Delete",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "c64u.treeview.rename",
+        "title": "Rename",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "c64u.treeview.copy",
+        "title": "Copy",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "c64u.treeview.createDir",
+        "title": "New Directory",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "c64u.treeview.createDisk",
+        "title": "Create Disk Image",
+        "icon": "$(database)"
+      },
+      {
+        "command": "c64u.treeview.mount",
+        "title": "Mount Disk Image",
+        "icon": "$(link)"
+      },
+      {
+        "command": "c64u.treeview.unmount",
+        "title": "Unmount Drive",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "c64u.treeview.download",
+        "title": "Download",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "c64u.treeview.upload",
+        "title": "Upload File",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "c64u.treeview.runPrg",
+        "title": "Run Program",
+        "icon": "$(play)"
+      },
+      {
+        "command": "c64u.treeview.openFile",
+        "title": "Open in Editor",
+        "icon": "$(go-to-file)"
       }
     ],
     "keybindings": [
@@ -132,62 +230,338 @@
         "command": "c64u.uploadAndRun",
         "key": "ctrl+shift+u",
         "mac": "cmd+shift+u",
-        "when": "editorLangId == kickass"
+        "when": "editorLangId == kickass && c64u.enabled"
       },
       {
         "command": "c64u.fileBrowser",
         "key": "ctrl+shift+b",
         "mac": "cmd+shift+b",
-        "when": "editorLangId == kickass"
+        "when": "editorLangId == kickass && c64u.enabled"
       }
     ],
-    "configuration": {
-      "title": "C64 Assembler Development",
-      "properties": {
-        "c64.kickassJarPath": {
-          "type": "string",
-          "default": "/Applications/KickAssembler/KickAss.jar",
-          "description": "Path to kickass.jar"
-        },
-        "c64.viceBinary": {
-          "type": "string",
-          "default": "x64",
-          "description": "VICE emulator binary (x64 or x64sc)"
-        },
-        "c64.kickassLsBinary": {
-          "type": "string",
-          "default": "kickass_ls",
-          "description": "Path to kickass_ls language server binary"
-        },
-        "c64u.enabled": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable C64 Ultimate integration"
-        },
-        "c64u.host": {
-          "type": "string",
-          "default": "localhost",
-          "description": "C64 Ultimate hostname or IP address"
-        },
-        "c64u.port": {
-          "type": "number",
-          "default": 80,
-          "description": "C64 Ultimate HTTP port"
-        },
-        "c64u.cliBinary": {
-          "type": "string",
-          "default": "c64u",
-          "description": "Path to c64u CLI binary"
+    "configuration": [
+      {
+        "title": "General",
+        "properties": {
+          "c64.kickassJarPath": {
+            "type": "string",
+            "default": "/Applications/KickAssembler/KickAss.jar",
+            "description": "Path to kickass.jar"
+          },
+          "c64.viceBinary": {
+            "type": "string",
+            "default": "x64",
+            "description": "VICE emulator binary (x64 or x64sc)"
+          },
+          "c64.kickassLsBinary": {
+            "type": "string",
+            "default": "kickass_ls",
+            "description": "Path to kickass_ls language server binary"
+          }
+        }
+      },
+      {
+        "title": "Language Server - Diagnostics",
+        "properties": {
+          "kickass_ls.warnUnusedLabels": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show warnings for labels that are defined but never used"
+          },
+          "kickass_ls.zeroPageOptimization.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable zero page optimization analysis"
+          },
+          "kickass_ls.zeroPageOptimization.showHints": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show hints when full addressing mode is used for zero page addresses ($00-$FF)"
+          },
+          "kickass_ls.branchDistanceValidation.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable branch distance validation"
+          },
+          "kickass_ls.branchDistanceValidation.showWarnings": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show warnings when branches exceed the +/-128 byte range"
+          },
+          "kickass_ls.illegalOpcodeDetection.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable detection of illegal/undocumented 6502 opcodes"
+          },
+          "kickass_ls.illegalOpcodeDetection.showWarnings": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show warnings for illegal opcodes (SLO, RLA, etc.)"
+          },
+          "kickass_ls.hardwareBugDetection.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable hardware bug detection"
+          },
+          "kickass_ls.hardwareBugDetection.showWarnings": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show warnings for known hardware bugs"
+          },
+          "kickass_ls.hardwareBugDetection.jmpIndirectBug": {
+            "type": "boolean",
+            "default": true,
+            "description": "Detect the JMP ($xxFF) page boundary bug"
+          },
+          "kickass_ls.memoryLayoutAnalysis.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable memory layout analysis"
+          },
+          "kickass_ls.memoryLayoutAnalysis.showIOAccess": {
+            "type": "boolean",
+            "default": true,
+            "description": "Highlight I/O register access ($D000-$DFFF)"
+          },
+          "kickass_ls.memoryLayoutAnalysis.showStackWarnings": {
+            "type": "boolean",
+            "default": true,
+            "description": "Warn about stack page issues ($0100-$01FF)"
+          },
+          "kickass_ls.memoryLayoutAnalysis.showROMWriteWarnings": {
+            "type": "boolean",
+            "default": true,
+            "description": "Warn about writes to ROM areas ($A000-$BFFF, $E000-$FFFF)"
+          },
+          "kickass_ls.magicNumberDetection.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable magic number detection"
+          },
+          "kickass_ls.magicNumberDetection.showHints": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show hints for hardcoded numbers that could be named constants"
+          },
+          "kickass_ls.magicNumberDetection.c64Addresses": {
+            "type": "boolean",
+            "default": true,
+            "description": "Recognize common C64 addresses (e.g. $D020 as BORDER_COLOR)"
+          },
+          "kickass_ls.deadCodeDetection.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable dead code detection"
+          },
+          "kickass_ls.deadCodeDetection.showWarnings": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show warnings for unreachable code after unconditional jumps"
+          },
+          "kickass_ls.styleGuideEnforcement.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable style guide enforcement"
+          },
+          "kickass_ls.styleGuideEnforcement.showHints": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show style hints"
+          },
+          "kickass_ls.styleGuideEnforcement.upperCaseConstants": {
+            "type": "boolean",
+            "default": true,
+            "description": "Suggest UPPER_CASE naming for constants"
+          },
+          "kickass_ls.styleGuideEnforcement.descriptiveLabels": {
+            "type": "boolean",
+            "default": true,
+            "description": "Warn about very short label names (less than 3 characters)"
+          }
+        }
+      },
+      {
+        "title": "Language Server - Formatting",
+        "properties": {
+          "kickass_ls.formatting.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable document formatting"
+          },
+          "kickass_ls.formatting.indentSize": {
+            "type": "integer",
+            "default": 4,
+            "minimum": 1,
+            "maximum": 16,
+            "description": "Number of spaces per indent level"
+          },
+          "kickass_ls.formatting.useSpaces": {
+            "type": "boolean",
+            "default": true,
+            "description": "Use spaces for indentation (false = tabs)"
+          },
+          "kickass_ls.formatting.alignComments": {
+            "type": "boolean",
+            "default": true,
+            "description": "Align end-of-line comments"
+          },
+          "kickass_ls.formatting.commentColumn": {
+            "type": "integer",
+            "default": 40,
+            "minimum": 0,
+            "maximum": 120,
+            "description": "Column position for comment alignment (0 = auto)"
+          }
+        }
+      },
+      {
+        "title": "C64 Ultimate",
+        "properties": {
+          "c64u.enabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable C64 Ultimate integration"
+          },
+          "c64u.host": {
+            "type": "string",
+            "default": "localhost",
+            "description": "C64 Ultimate hostname or IP address"
+          },
+          "c64u.port": {
+            "type": "number",
+            "default": 80,
+            "description": "C64 Ultimate HTTP port"
+          },
+          "c64u.cliBinary": {
+            "type": "string",
+            "default": "c64u",
+            "description": "Path to c64u CLI binary"
+          }
         }
       }
+    ],
+    "menus": {
+      "commandPalette": [
+        { "command": "c64u.uploadAndRun", "when": "c64u.enabled" },
+        { "command": "c64u.fileBrowser", "when": "c64u.enabled" },
+        { "command": "c64u.machineControl", "when": "c64u.enabled" },
+        { "command": "c64u.upload", "when": "c64u.enabled" },
+        { "command": "c64u.download", "when": "c64u.enabled" },
+        { "command": "c64u.mkdir", "when": "c64u.enabled" },
+        { "command": "c64u.remove", "when": "c64u.enabled" },
+        { "command": "c64u.move", "when": "c64u.enabled" },
+        { "command": "c64u.copy", "when": "c64u.enabled" },
+        { "command": "c64u.list", "when": "c64u.enabled" },
+        { "command": "c64u.fileInfo", "when": "c64u.enabled" },
+        { "command": "c64u.treeview.refresh", "when": "false" },
+        { "command": "c64u.treeview.navigate", "when": "false" },
+        { "command": "c64u.treeview.delete", "when": "false" },
+        { "command": "c64u.treeview.rename", "when": "false" },
+        { "command": "c64u.treeview.copy", "when": "false" },
+        { "command": "c64u.treeview.createDir", "when": "false" },
+        { "command": "c64u.treeview.createDisk", "when": "false" },
+        { "command": "c64u.treeview.mount", "when": "false" },
+        { "command": "c64u.treeview.unmount", "when": "false" },
+        { "command": "c64u.treeview.download", "when": "false" },
+        { "command": "c64u.treeview.upload", "when": "false" },
+        { "command": "c64u.treeview.runPrg", "when": "false" },
+        { "command": "c64u.treeview.openFile", "when": "false" }
+      ],
+      "view/title": [
+        {
+          "command": "c64u.treeview.refresh",
+          "when": "view == c64u.fileExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "c64u.treeview.upload",
+          "when": "view == c64u.fileExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "c64u.treeview.createDir",
+          "when": "view == c64u.fileExplorer",
+          "group": "1_create"
+        },
+        {
+          "command": "c64u.treeview.createDisk",
+          "when": "view == c64u.fileExplorer",
+          "group": "1_create"
+        },
+        {
+          "command": "c64u.treeview.unmount",
+          "when": "view == c64u.fileExplorer",
+          "group": "2_mount"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "c64u.treeview.openFile",
+          "when": "view == c64u.fileExplorer && viewItem =~ /^(textfile|binaryfile|program|cartridge)$/",
+          "group": "0_open@1"
+        },
+        {
+          "command": "c64u.treeview.runPrg",
+          "when": "view == c64u.fileExplorer && viewItem == program",
+          "group": "1_run@1"
+        },
+        {
+          "command": "c64u.treeview.mount",
+          "when": "view == c64u.fileExplorer && viewItem =~ /^diskimage/",
+          "group": "2_mount@1"
+        },
+        {
+          "command": "c64u.treeview.unmount",
+          "when": "view == c64u.fileExplorer && viewItem =~ /^diskimage/",
+          "group": "2_mount@2"
+        },
+        {
+          "command": "c64u.treeview.download",
+          "when": "view == c64u.fileExplorer && viewItem != directory && viewItem != parent && viewItem != message && viewItem != error",
+          "group": "3_transfer@1"
+        },
+        {
+          "command": "c64u.treeview.upload",
+          "when": "view == c64u.fileExplorer && viewItem == directory",
+          "group": "3_transfer@2"
+        },
+        {
+          "command": "c64u.treeview.rename",
+          "when": "view == c64u.fileExplorer && viewItem != parent && viewItem != message && viewItem != error",
+          "group": "4_edit@1"
+        },
+        {
+          "command": "c64u.treeview.copy",
+          "when": "view == c64u.fileExplorer && viewItem != directory && viewItem != parent && viewItem != message && viewItem != error",
+          "group": "4_edit@2"
+        },
+        {
+          "command": "c64u.treeview.delete",
+          "when": "view == c64u.fileExplorer && viewItem != parent && viewItem != message && viewItem != error",
+          "group": "5_delete@1"
+        },
+        {
+          "command": "c64u.treeview.createDir",
+          "when": "view == c64u.fileExplorer && viewItem == directory",
+          "group": "6_create@1"
+        },
+        {
+          "command": "c64u.treeview.createDisk",
+          "when": "view == c64u.fileExplorer && viewItem == directory",
+          "group": "6_create@2"
+        }
+      ]
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run compile && npm run build:binaries",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",
-    "package": "vsce package"
+    "build:binaries": "./scripts/build-binaries.sh --all --clean",
+    "build:binaries:current": "./scripts/build-binaries.sh --current --clean",
+    "package": "npm run build:binaries && vsce package",
+    "package:current": "npm run build:binaries:current && vsce package"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

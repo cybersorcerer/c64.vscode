@@ -3,34 +3,145 @@ import { LanguageClient, LanguageClientOptions, ServerOptions, Executable } from
 import { KickassemblerService } from './kickassembler';
 import { ViceService } from './vice';
 import { C64UService } from './c64u/service';
+import { C64UFileSystemProvider } from './c64u/treeview';
+import { C64UTreeViewActions } from './c64u/treeview-actions';
+import { C64UClient } from './c64u/client';
+import { getKickassLsPath, logBinaryResolution } from './binaries';
+import { initC64UCli } from './c64u/cli';
 
 let client: LanguageClient | undefined;
 let kickassService: KickassemblerService;
 let viceService: ViceService;
-let c64uService: C64UService | undefined;
+let c64uService: C64UService;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('C64 Assembler extension is now active');
 
-    // Initialize services
+    // Set initial c64u.enabled context for when-clauses
+    const c64uEnabled = vscode.workspace.getConfiguration('c64u').get<boolean>('enabled', false);
+    vscode.commands.executeCommand('setContext', 'c64u.enabled', c64uEnabled);
+
+    // Initialize binary resolution for c64u CLI
+    initC64UCli(context.extensionPath);
+
+    // Initialize services - these create DiagnosticCollections
     kickassService = new KickassemblerService();
     viceService = new ViceService();
 
-    // Initialize C64 Ultimate service if enabled
-    const config = vscode.workspace.getConfiguration('c64u');
-    if (config.get<boolean>('enabled')) {
-        c64uService = new C64UService();
-    }
+    // Register kickassService for disposal (has DiagnosticCollection)
+    context.subscriptions.push(kickassService);
+
+    // Always initialize C64 Ultimate service
+    // It will check enabled status and configuration at runtime
+    c64uService = new C64UService();
+
+    // Initialize C64U Tree View
+    const c64uConfig = vscode.workspace.getConfiguration('c64u');
+    const treeDataProvider = new C64UFileSystemProvider(c64uConfig);
+    const treeView = vscode.window.createTreeView('c64u.fileExplorer', {
+        treeDataProvider: treeDataProvider,
+        showCollapseAll: true,
+        canSelectMany: true,
+        dragAndDropController: treeDataProvider
+    });
+    context.subscriptions.push(treeView);
+
+    // Initialize Tree View Actions
+    const c64uClient = new C64UClient();
+    const treeActions = new C64UTreeViewActions(
+        c64uClient,
+        () => treeDataProvider.refresh(),
+        context.globalStorageUri.fsPath
+    );
+    context.subscriptions.push(treeActions);
+
+    // Register Tree View commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.refresh', () => {
+            treeDataProvider.refresh();
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.navigate', async (item) => {
+            if (item) {
+                treeDataProvider.navigateTo(item.resourcePath);
+            }
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.openFile', async (item) => {
+            await treeActions.openFile(item);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.delete', async (item) => {
+            await treeActions.deleteFile(item);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.rename', async (item) => {
+            await treeActions.renameFile(item);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.copy', async (item) => {
+            await treeActions.copyFile(item);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.createDir', async (item) => {
+            await treeActions.createDirectory(item);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.createDisk', async (item) => {
+            await treeActions.createDiskImage(item);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.mount', async (item) => {
+            await treeActions.mountDiskImage(item);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.unmount', async () => {
+            await treeActions.unmountDrive();
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.download', async (item) => {
+            await treeActions.downloadFile(item);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.upload', async (item) => {
+            await treeActions.uploadFile(item);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.runPrg', async (item) => {
+            await treeActions.runProgram(item);
+        })
+    );
 
     // Start Language Server first
     startLanguageServer(context);
 
     // Auto-detect and set language for .asm and .s files
-    // Use setTimeout to ensure this runs after all initialization
-    setTimeout(() => {
-        console.log('Starting auto-detection for Kick Assembler files...');
-        autoDetectKickassFiles(context);
-    }, 500);
+    console.log('Starting auto-detection for Kick Assembler files...');
+    autoDetectKickassFiles(context);
 
     // Register Kickassembler commands
     context.subscriptions.push(
@@ -71,128 +182,122 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    // Register C64 Ultimate commands if enabled
-    if (c64uService) {
-        context.subscriptions.push(
-            vscode.commands.registerCommand('c64u.uploadAndRun', async () => {
-                const editor = vscode.window.activeTextEditor;
-                if (!editor) {
-                    vscode.window.showErrorMessage('No active editor');
-                    return;
-                }
-                const success = await kickassService.assemble(editor.document.uri.fsPath);
-                if (success && c64uService) {
-                    const prgPath = editor.document.uri.fsPath.replace(/\.(asm|s)$/, '.prg');
-                    await c64uService.uploadAndRun(prgPath);
-                }
-            })
-        );
+    // Register C64 Ultimate commands (always register, check enabled state at runtime)
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.uploadAndRun', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showErrorMessage('No active editor');
+                return;
+            }
+            const success = await kickassService.assemble(editor.document.uri.fsPath);
+            if (success) {
+                const prgPath = editor.document.uri.fsPath.replace(/\.(asm|s)$/, '.prg');
+                await c64uService!.uploadAndRun(prgPath);
+            }
+        })
+    );
 
-        context.subscriptions.push(
-            vscode.commands.registerCommand('c64u.fileBrowser', async () => {
-                if (c64uService) {
-                    await c64uService.showFileBrowser();
-                }
-            })
-        );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.fileBrowser', async () => {
+            await c64uService!.showFileBrowser();
+        })
+    );
 
-        context.subscriptions.push(
-            vscode.commands.registerCommand('c64u.machineControl', async () => {
-                if (c64uService) {
-                    await c64uService.showMachineControl();
-                }
-            })
-        );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.machineControl', async () => {
+            await c64uService!.showMachineControl();
+        })
+    );
 
-        context.subscriptions.push(
-            vscode.commands.registerCommand('c64u.upload', async () => {
-                if (c64uService) {
-                    await c64uService.uploadFile();
-                }
-            })
-        );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.upload', async () => {
+            await c64uService!.uploadFile();
+        })
+    );
 
-        context.subscriptions.push(
-            vscode.commands.registerCommand('c64u.download', async () => {
-                if (c64uService) {
-                    await c64uService.downloadFile();
-                }
-            })
-        );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.download', async () => {
+            await c64uService!.downloadFile();
+        })
+    );
 
-        context.subscriptions.push(
-            vscode.commands.registerCommand('c64u.mkdir', async () => {
-                if (c64uService) {
-                    await c64uService.createDirectory();
-                }
-            })
-        );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.mkdir', async () => {
+            await c64uService!.createDirectory();
+        })
+    );
 
-        context.subscriptions.push(
-            vscode.commands.registerCommand('c64u.remove', async () => {
-                if (c64uService) {
-                    await c64uService.removeFile();
-                }
-            })
-        );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.remove', async () => {
+            await c64uService!.removeFile();
+        })
+    );
 
-        context.subscriptions.push(
-            vscode.commands.registerCommand('c64u.move', async () => {
-                if (c64uService) {
-                    await c64uService.moveFile();
-                }
-            })
-        );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.move', async () => {
+            await c64uService!.moveFile();
+        })
+    );
 
-        context.subscriptions.push(
-            vscode.commands.registerCommand('c64u.copy', async () => {
-                if (c64uService) {
-                    await c64uService.copyFile();
-                }
-            })
-        );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.copy', async () => {
+            await c64uService!.copyFile();
+        })
+    );
 
-        context.subscriptions.push(
-            vscode.commands.registerCommand('c64u.list', async () => {
-                if (c64uService) {
-                    await c64uService.listDirectory();
-                }
-            })
-        );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.list', async () => {
+            await c64uService!.listDirectory();
+        })
+    );
 
-        context.subscriptions.push(
-            vscode.commands.registerCommand('c64u.fileInfo', async () => {
-                if (c64uService) {
-                    await c64uService.showFileInfo();
-                }
-            })
-        );
-    }
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.fileInfo', async () => {
+            await c64uService!.showFileInfo();
+        })
+    );
 
     // Watch for configuration changes
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('c64u.enabled')) {
-                const enabled = vscode.workspace.getConfiguration('c64u').get<boolean>('enabled');
-                if (enabled && !c64uService) {
-                    c64uService = new C64UService();
-                    vscode.window.showInformationMessage('C64 Ultimate integration enabled. Reload window to activate commands.');
-                } else if (!enabled && c64uService) {
-                    c64uService = undefined;
-                    vscode.window.showInformationMessage('C64 Ultimate integration disabled. Reload window to deactivate commands.');
-                }
+            if (e.affectsConfiguration('c64u')) {
+                const enabled = vscode.workspace.getConfiguration('c64u').get<boolean>('enabled', false);
+                vscode.commands.executeCommand('setContext', 'c64u.enabled', enabled);
+                treeDataProvider.refresh();
+            }
+            // Push kickass_ls settings to language server on change
+            if (e.affectsConfiguration('kickass_ls') && client) {
+                client.sendNotification('workspace/didChangeConfiguration', {
+                    settings: { kickass_ls: getKickassLsSettings() }
+                });
+            }
+        })
+    );
+
+    // Clear diagnostics when a document is closed
+    context.subscriptions.push(
+        vscode.workspace.onDidCloseTextDocument(document => {
+            if (document.fileName.endsWith('.asm') || document.fileName.endsWith('.s')) {
+                kickassService.clearDiagnostics(document.uri);
             }
         })
     );
 }
 
 function startLanguageServer(context: vscode.ExtensionContext) {
-    const config = vscode.workspace.getConfiguration('c64');
-    const lsBinary = config.get<string>('kickassLsBinary') || 'kickass_ls';
+    // Resolve kickass_ls binary path (settings > PATH > bundled)
+    const lsResolution = getKickassLsPath(context.extensionPath);
+    logBinaryResolution('kickass_ls', lsResolution);
 
-    // Check if language server is available
+    if (lsResolution.source === 'not_found') {
+        vscode.window.showWarningMessage(
+            'kickass_ls not found. Install it, add to PATH, or configure c64.kickassLsBinary in settings.'
+        );
+    }
+
     const serverOptions: ServerOptions = {
-        command: lsBinary,
+        command: lsResolution.path,
         args: []
     } as Executable;
 
@@ -203,49 +308,7 @@ function startLanguageServer(context: vscode.ExtensionContext) {
             fileEvents: vscode.workspace.createFileSystemWatcher('**/*.{asm,s}')
         },
         initializationOptions: {
-            settings: {
-                kickass_ls: {
-                    warnUnusedLabels: false,
-                    zeroPageOptimization: {
-                        enabled: true,
-                        showHints: true
-                    },
-                    branchDistanceValidation: {
-                        enabled: true,
-                        showWarnings: true
-                    },
-                    illegalOpcodeDetection: {
-                        enabled: true,
-                        showWarnings: true
-                    },
-                    hardwareBugDetection: {
-                        enabled: true,
-                        showWarnings: true,
-                        jmpIndirectBug: true
-                    },
-                    memoryLayoutAnalysis: {
-                        enabled: true,
-                        showIOAccess: true,
-                        showStackWarnings: true,
-                        showROMWriteWarnings: true
-                    },
-                    magicNumberDetection: {
-                        enabled: true,
-                        showHints: true,
-                        c64Addresses: true
-                    },
-                    deadCodeDetection: {
-                        enabled: true,
-                        showWarnings: true
-                    },
-                    styleGuideEnforcement: {
-                        enabled: true,
-                        showHints: true,
-                        upperCaseConstants: true,
-                        descriptiveLabels: true
-                    }
-                }
-            }
+            settings: { kickass_ls: getKickassLsSettings() }
         }
     };
 
@@ -334,23 +397,73 @@ function autoDetectKickassFiles(context: vscode.ExtensionContext) {
             if (document.fileName.endsWith('.asm') || document.fileName.endsWith('.s')) {
                 console.log(`Opened file: ${document.fileName}, current language: ${document.languageId}`);
 
-                // Use setTimeout to ensure we run after VSCode's language detection
+                // Check immediately first
+                checkAndSetLanguage(document);
+
+                // Also check after a short delay in case VSCode overrides the language
                 setTimeout(() => {
                     checkAndSetLanguage(document);
                 }, 100);
             }
         })
     );
+}
 
-    // Also watch for when language changes (e.g., VSCode overrides our setting)
-    context.subscriptions.push(
-        vscode.workspace.onDidOpenTextDocument(document => {
-            // Immediate check
-            if (document.fileName.endsWith('.asm') || document.fileName.endsWith('.s')) {
-                checkAndSetLanguage(document);
-            }
-        })
-    );
+/**
+ * Read kickass_ls settings from VS Code configuration and return
+ * the nested object structure expected by the language server.
+ */
+function getKickassLsSettings(): Record<string, unknown> {
+    const config = vscode.workspace.getConfiguration('kickass_ls');
+
+    return {
+        warnUnusedLabels: config.get<boolean>('warnUnusedLabels'),
+        zeroPageOptimization: {
+            enabled: config.get<boolean>('zeroPageOptimization.enabled'),
+            showHints: config.get<boolean>('zeroPageOptimization.showHints')
+        },
+        branchDistanceValidation: {
+            enabled: config.get<boolean>('branchDistanceValidation.enabled'),
+            showWarnings: config.get<boolean>('branchDistanceValidation.showWarnings')
+        },
+        illegalOpcodeDetection: {
+            enabled: config.get<boolean>('illegalOpcodeDetection.enabled'),
+            showWarnings: config.get<boolean>('illegalOpcodeDetection.showWarnings')
+        },
+        hardwareBugDetection: {
+            enabled: config.get<boolean>('hardwareBugDetection.enabled'),
+            showWarnings: config.get<boolean>('hardwareBugDetection.showWarnings'),
+            jmpIndirectBug: config.get<boolean>('hardwareBugDetection.jmpIndirectBug')
+        },
+        memoryLayoutAnalysis: {
+            enabled: config.get<boolean>('memoryLayoutAnalysis.enabled'),
+            showIOAccess: config.get<boolean>('memoryLayoutAnalysis.showIOAccess'),
+            showStackWarnings: config.get<boolean>('memoryLayoutAnalysis.showStackWarnings'),
+            showROMWriteWarnings: config.get<boolean>('memoryLayoutAnalysis.showROMWriteWarnings')
+        },
+        magicNumberDetection: {
+            enabled: config.get<boolean>('magicNumberDetection.enabled'),
+            showHints: config.get<boolean>('magicNumberDetection.showHints'),
+            c64Addresses: config.get<boolean>('magicNumberDetection.c64Addresses')
+        },
+        deadCodeDetection: {
+            enabled: config.get<boolean>('deadCodeDetection.enabled'),
+            showWarnings: config.get<boolean>('deadCodeDetection.showWarnings')
+        },
+        styleGuideEnforcement: {
+            enabled: config.get<boolean>('styleGuideEnforcement.enabled'),
+            showHints: config.get<boolean>('styleGuideEnforcement.showHints'),
+            upperCaseConstants: config.get<boolean>('styleGuideEnforcement.upperCaseConstants'),
+            descriptiveLabels: config.get<boolean>('styleGuideEnforcement.descriptiveLabels')
+        },
+        formatting: {
+            enabled: config.get<boolean>('formatting.enabled'),
+            indentSize: config.get<number>('formatting.indentSize'),
+            useSpaces: config.get<boolean>('formatting.useSpaces'),
+            alignComments: config.get<boolean>('formatting.alignComments'),
+            commentColumn: config.get<number>('formatting.commentColumn')
+        }
+    };
 }
 
 function configureSemanticTokens() {

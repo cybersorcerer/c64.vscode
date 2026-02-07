@@ -1,0 +1,136 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - vscode_target: darwin-arm64
+            goos: darwin
+            goarch: arm64
+            binary_dir: darwin-arm64
+          - vscode_target: darwin-x64
+            goos: darwin
+            goarch: amd64
+            binary_dir: darwin-amd64
+          - vscode_target: linux-x64
+            goos: linux
+            goarch: amd64
+            binary_dir: linux-amd64
+          - vscode_target: linux-arm64
+            goos: linux
+            goarch: arm64
+            binary_dir: linux-arm64
+          - vscode_target: win32-x64
+            goos: windows
+            goarch: amd64
+            binary_dir: windows-amd64
+
+    steps:
+      - name: Checkout extension
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate version
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+
+      - name: Clone kickass_ls
+        run: git clone --depth 1 https://github.com/cybersorcerer/kickass_ls.git ../kickass_ls
+
+      - name: Clone c64u
+        run: git clone --depth 1 https://github.com/cybersorcerer/c64u.git ../c64u
+
+      - name: Build kickass_ls
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          EXT=""
+          if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
+          mkdir -p binaries/${{ matrix.binary_dir }}
+          cd ../kickass_ls
+          VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+          go build -trimpath \
+            -ldflags "-s -w -X main.Version=$VERSION" \
+            -o "$GITHUB_WORKSPACE/binaries/${{ matrix.binary_dir }}/kickass_ls${EXT}" .
+
+      - name: Copy kickass_ls config files
+        run: |
+          cp ../kickass_ls/kickass.json binaries/${{ matrix.binary_dir }}/ 2>/dev/null || true
+          cp ../kickass_ls/mnemonic.json binaries/${{ matrix.binary_dir }}/ 2>/dev/null || true
+          cp ../kickass_ls/c64memory.json binaries/${{ matrix.binary_dir }}/ 2>/dev/null || true
+
+      - name: Build c64u
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          EXT=""
+          if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
+          cd ../c64u/tools/c64u
+          VERSION=$(cd "$GITHUB_WORKSPACE/../c64u" && git describe --tags --always 2>/dev/null || echo "dev")
+          go build -trimpath \
+            -ldflags "-s -w -X main.version=$VERSION" \
+            -o "$GITHUB_WORKSPACE/binaries/${{ matrix.binary_dir }}/c64u${EXT}" ./cmd/c64u
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Strip vscode:prepublish hook
+        run: npm pkg delete scripts.vscode:prepublish
+
+      - name: Package VSIX
+        run: npx vsce package --target ${{ matrix.vscode_target }}
+
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-${{ matrix.vscode_target }}
+          path: '*.vsix'
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all VSIX artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: vsix-*
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --repo ${{ github.repository }} \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            *.vsix

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
 import * as fs from 'fs';
+import * as path from 'path';
 
 export class ViceService {
     async run(prgPath: string): Promise<void> {
@@ -13,18 +14,27 @@ export class ViceService {
         }
 
         // Use VICE autostart mode to load and run the PRG
-        const command = `${viceBinary} -autostartprgmode 1 "${prgPath}"`;
+        const command = `"${viceBinary}" -autostartprgmode 1 "${prgPath}"`;
 
-        try {
-            child_process.exec(command, (error) => {
-                if (error) {
+        const process = child_process.exec(command, (error, _stdout, stderr) => {
+            if (error) {
+                // Check for common error cases
+                if (error.message.includes('ENOENT') || error.message.includes('not found')) {
+                    vscode.window.showErrorMessage(
+                        `VICE emulator not found: ${viceBinary}. Please install VICE or configure c64.viceBinary in settings.`
+                    );
+                } else {
                     vscode.window.showErrorMessage(`Failed to start VICE: ${error.message}`);
                 }
-            });
+            }
+            if (stderr && stderr.trim()) {
+                console.error('VICE stderr:', stderr);
+            }
+        });
 
-            vscode.window.showInformationMessage(`Started VICE with ${prgPath}`);
-        } catch (error) {
-            vscode.window.showErrorMessage(`Failed to start VICE: ${error}`);
+        // Check if process started successfully
+        if (process.pid) {
+            vscode.window.showInformationMessage(`Started VICE with ${path.basename(prgPath)}`);
         }
     }
 }

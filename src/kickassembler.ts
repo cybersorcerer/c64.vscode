@@ -9,7 +9,8 @@ export class KickassemblerService {
 
     constructor() {
         this.outputChannel = vscode.window.createOutputChannel('Kick Assembler');
-        this.diagnosticCollection = vscode.languages.createDiagnosticCollection('kickass');
+        // Use a unique name to avoid conflicts with LSP diagnostics
+        this.diagnosticCollection = vscode.languages.createDiagnosticCollection('kickass-assembler');
     }
 
     async assemble(filePath: string): Promise<boolean> {
@@ -29,6 +30,9 @@ export class KickassemblerService {
         const outputDir = path.dirname(filePath);
         const outputFile = filePath.replace(/\.(asm|s)$/, '.prg');
 
+        // Clear previous diagnostics
+        this.diagnosticCollection.clear();
+
         this.outputChannel.clear();
         this.outputChannel.show(true);
         this.outputChannel.appendLine(`Assembling: ${filePath}`);
@@ -36,18 +40,23 @@ export class KickassemblerService {
         return new Promise((resolve) => {
             const command = `java -jar "${kickassJarPath}" "${filePath}" -o "${outputFile}"`;
 
-            child_process.exec(command, { cwd: outputDir }, (error, stdout, stderr) => {
-                this.outputChannel.appendLine(stdout);
-                if (stderr) {
-                    this.outputChannel.appendLine(stderr);
-                }
+            const timeout = 60000; // 60 seconds timeout for Java process
+            child_process.exec(command, { cwd: outputDir, timeout }, (error, stdout, stderr) => {
+                const output = stdout + stderr;
+
+                this.outputChannel.appendLine(output);
 
                 // Parse output for errors and warnings
-                this.parseDiagnostics(filePath, stdout + stderr);
+                this.parseDiagnostics(filePath, output);
 
                 if (error) {
-                    vscode.window.showErrorMessage('Assembly failed. Check output for errors.');
-                    this.outputChannel.appendLine(`\nAssembly failed with exit code ${error.code}`);
+                    if (error.killed) {
+                        vscode.window.showErrorMessage('Assembly timeout - process exceeded 60 seconds');
+                        this.outputChannel.appendLine(`\nAssembly timeout - process killed after 60 seconds`);
+                    } else {
+                        vscode.window.showErrorMessage('Assembly failed. Check Problems panel for errors.');
+                        this.outputChannel.appendLine(`\nAssembly failed with exit code ${error.code}`);
+                    }
                     resolve(false);
                 } else {
                     vscode.window.showInformationMessage(`Assembly successful: ${path.basename(outputFile)}`);
@@ -144,6 +153,10 @@ export class KickassemblerService {
         // Update diagnostics
         const uri = vscode.Uri.file(filePath);
         this.diagnosticCollection.set(uri, diagnostics);
+    }
+
+    clearDiagnostics(uri: vscode.Uri) {
+        this.diagnosticCollection.delete(uri);
     }
 
     dispose() {

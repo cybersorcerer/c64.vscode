@@ -1,0 +1,6 @@
+{
+  "c64.kickassJarPath": "/Applications/KickAssembler/KickAss.jar",
+  "c64u.enabled": true,
+  "c64u.host": "c64u.homelab.cybersorcerer.org",
+  "c64u.port": 80
+}

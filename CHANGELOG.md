@@ -2,28 +2,51 @@
 
 All notable changes to the "c64-vscode" extension will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **Language Server Settings UI** — All kickass_ls diagnostics and formatting options are now configurable via VS Code settings (search for "kickass_ls"). Changes take effect immediately without reload.
+- **GitHub Actions Release Workflow** — Automatically builds platform-specific VSIX files when a version tag is pushed.
+
+## [0.3.0] - 2026-02-07
+
+### Added
+
+- **Bundled Binaries** — kickass_ls and c64u are now bundled in the VSIX for all supported platforms (macOS, Linux, Windows). Binary resolution: Settings > PATH > Bundled.
+- **C64 Ultimate Tree View File Explorer** — Full tree view in the Activity Bar with drag-and-drop support for file management on the C64 Ultimate.
+- **Open files from Tree Explorer** — Text files (.asm, .bas, .seq, .txt, .cfg, .inc, .sym, .dbg) open in the editor with auto-upload on save. Binary files (.prg, .crt, .bin, .tap, .t64, .rel, .ko) open in the Hex Editor.
+- **Disk image creation** — Create d64, d71, d81, g64, and dnp disk images directly from the Tree View.
+- **Mount/unmount disk images** — Mount disk images on IEC drives with read-write, read-only, or unlinked modes.
+- **Context menu actions** — Right-click items in the Tree View for rename, copy, delete, download, upload, run, and mount operations.
+- **Build scripts** — `scripts/build-binaries.sh` for local cross-compilation with auto-update support (git pull + incremental builds via commit hash tracking).
+
+### Changed
+
+- Binary paths for kickass_ls and c64u are now independently configurable via `c64.kickassLsBinary` and `c64u.cliBinary` settings.
+
+## [0.2.0] - 2026-01-20
+
+### Added
+
+- **C64 Ultimate integration** — Upload, download, and run programs on real C64 Ultimate hardware via the c64u CLI.
+- **Interactive file browser** — QuickPick-based file browser for navigating the C64 Ultimate filesystem.
+- **Machine control** — Reset, reboot, pause, and resume the C64 Ultimate.
+- **File operations** — Create directories, move, copy, delete, and show file info on the C64 Ultimate.
+
+### Fixed
+
+- **Process timeout** — Added 60-second timeout for Kick Assembler to prevent hanging builds.
+- **VICE error handling** — Improved error messages when VICE binary is not found (ENOENT detection).
+- **Auto-detection race condition** — Fixed duplicate event handlers and timing issues in Kick Assembler file detection.
+
 ## [0.1.0] - 2026-01-10
 
 ### Added
-- Initial release
-- LSP-based syntax highlighting via kickass_ls (no static syntax files!)
-- Kick Assembler integration with error/warning detection
-- VICE emulator support with autostart
-- C64 Ultimate integration via c64u CLI:
-  - Interactive file browser (QuickPick-based)
-  - Upload/download files
-  - Mount disk images (d64/d71/d81/g64/g71)
-  - Machine control (reset, reboot, pause, resume)
-  - Directory operations (create, delete, list)
-  - File operations (move, copy, delete, info)
-- Keyboard shortcuts for quick access
-- Comprehensive configuration options
-- Problems panel integration for assembly errors
 
-### Features
-- **No static syntax files** - All highlighting from LSP
-- **Semantic tokens** - Context-aware syntax highlighting
-- **Real-time diagnostics** - Instant feedback on code issues
-- **C64 Ultimate workflow** - Assemble, upload and run on real hardware
-- **File browser** - Navigate C64 Ultimate filesystem
-- **Disk image support** - Mount and manage disk images
+- Initial release.
+- LSP-based syntax highlighting via kickass_ls — no static syntax files.
+- Kick Assembler integration with error/warning detection in Problems panel.
+- VICE emulator support with autostart mode.
+- Keyboard shortcuts for assemble, run, and assemble-and-run.
+- Semantic token support for context-aware highlighting.

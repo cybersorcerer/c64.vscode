@@ -111,6 +111,7 @@ export class FileBrowserProvider {
         const actions = [
             { label: '$(cloud-download) Download', value: 'download' },
             { label: '$(play) Run (PRG)', value: 'run' },
+            { label: '$(play) Run (CRT)', value: 'runc' },
             { label: '$(save-as) Mount (Disk Image)', value: 'mount' },
             { label: '$(info) File Info', value: 'info' },
             { label: '$(trash) Delete', value: 'delete' }
@@ -130,6 +131,9 @@ export class FileBrowserProvider {
                 break;
             case 'run':
                 await this.runPrg(filePath);
+                break;
+            case 'runc':
+                await this.runCrt(filePath);
                 break;
             case 'mount':
                 await this.mountImage(filePath);
@@ -166,6 +170,17 @@ export class FileBrowserProvider {
     private async runPrg(prgPath: string): Promise<void> {
         const { executeC64U } = await import('./cli');
         const result = await executeC64U(['runners', 'run-prg', prgPath]);
+
+        if (result.success) {
+            vscode.window.showInformationMessage(`Running ${prgPath} on C64 Ultimate`);
+        } else {
+            vscode.window.showErrorMessage(`Failed to run: ${result.error}`);
+        }
+    }
+
+    private async runCrt(prgPath: string): Promise<void> {
+        const { executeC64U } = await import('./cli');
+        const result = await executeC64U(['runners', 'run-crt', prgPath]);
 
         if (result.success) {
             vscode.window.showInformationMessage(`Running ${prgPath} on C64 Ultimate`);
