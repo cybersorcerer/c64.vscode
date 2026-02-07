@@ -58,7 +58,7 @@
         ],
         "extensions": [
           ".asm",
-          ".s"
+          ".kasm"
         ],
         "configuration": "./language-configuration.json"
       }

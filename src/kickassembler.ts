@@ -28,7 +28,7 @@ export class KickassemblerService {
         }
 
         const outputDir = path.dirname(filePath);
-        const outputFile = filePath.replace(/\.(asm|s)$/, '.prg');
+        const outputFile = filePath.replace(/\.(asm|kasm)$/, '.prg');
 
         // Clear previous diagnostics
         this.diagnosticCollection.clear();

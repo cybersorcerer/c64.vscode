@@ -162,7 +162,7 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.window.showErrorMessage('No active editor');
                 return;
             }
-            const prgPath = editor.document.uri.fsPath.replace(/\.(asm|s)$/, '.prg');
+            const prgPath = editor.document.uri.fsPath.replace(/\.(asm|kasm)$/, '.prg');
             await viceService.run(prgPath);
         })
     );
@@ -176,7 +176,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
             const success = await kickassService.assemble(editor.document.uri.fsPath);
             if (success) {
-                const prgPath = editor.document.uri.fsPath.replace(/\.(asm|s)$/, '.prg');
+                const prgPath = editor.document.uri.fsPath.replace(/\.(asm|kasm)$/, '.prg');
                 await viceService.run(prgPath);
             }
         })
@@ -192,7 +192,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
             const success = await kickassService.assemble(editor.document.uri.fsPath);
             if (success) {
-                const prgPath = editor.document.uri.fsPath.replace(/\.(asm|s)$/, '.prg');
+                const prgPath = editor.document.uri.fsPath.replace(/\.(asm|kasm)$/, '.prg');
                 await c64uService!.uploadAndRun(prgPath);
             }
         })
@@ -278,7 +278,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Clear diagnostics when a document is closed
     context.subscriptions.push(
         vscode.workspace.onDidCloseTextDocument(document => {
-            if (document.fileName.endsWith('.asm') || document.fileName.endsWith('.s')) {
+            if (document.fileName.endsWith('.asm') || document.fileName.endsWith('.kasm')) {
                 kickassService.clearDiagnostics(document.uri);
             }
         })
@@ -303,9 +303,13 @@ function startLanguageServer(context: vscode.ExtensionContext) {
 
     // LSP client options with semantic tokens support
     const clientOptions: LanguageClientOptions = {
-        documentSelector: [{ scheme: 'file', language: 'kickass' }],
+        documentSelector: [
+            { scheme: 'file', language: 'kickass' },
+            { scheme: 'file', pattern: '**/*.asm' },
+            { scheme: 'file', pattern: '**/*.kasm' }
+        ],
         synchronize: {
-            fileEvents: vscode.workspace.createFileSystemWatcher('**/*.{asm,s}')
+            fileEvents: vscode.workspace.createFileSystemWatcher('**/*.{asm,kasm}')
         },
         initializationOptions: {
             settings: { kickass_ls: getKickassLsSettings() }
@@ -373,7 +377,7 @@ function autoDetectKickassFiles(context: vscode.ExtensionContext) {
 
     // Helper function to set language if needed
     const checkAndSetLanguage = (document: vscode.TextDocument) => {
-        if ((document.fileName.endsWith('.asm') || document.fileName.endsWith('.s')) &&
+        if ((document.fileName.endsWith('.asm') || document.fileName.endsWith('.kasm')) &&
             document.languageId !== 'kickass') {
 
             // For .asm files, be more aggressive - check patterns
@@ -394,7 +398,7 @@ function autoDetectKickassFiles(context: vscode.ExtensionContext) {
     // Watch for newly opened documents
     context.subscriptions.push(
         vscode.workspace.onDidOpenTextDocument(document => {
-            if (document.fileName.endsWith('.asm') || document.fileName.endsWith('.s')) {
+            if (document.fileName.endsWith('.asm') || document.fileName.endsWith('.kasm')) {
                 console.log(`Opened file: ${document.fileName}, current language: ${document.languageId}`);
 
                 // Check immediately first
