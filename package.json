@@ -67,15 +67,33 @@
       {
         "language": "kickass",
         "scopes": {
-          "mnemonic": ["entity.name.function"],
-          "directive": ["keyword.control"],
-          "preprocessor": ["keyword.control.directive"],
-          "macro": ["entity.name.function.macro"],
-          "pseudocommand": ["support.function"],
-          "function": ["entity.name.function"],
-          "label": ["entity.name.label"],
-          "number": ["constant.numeric"],
-          "variable": ["variable"]
+          "mnemonic": [
+            "entity.name.function"
+          ],
+          "directive": [
+            "keyword.control"
+          ],
+          "preprocessor": [
+            "keyword.control.directive"
+          ],
+          "macro": [
+            "entity.name.function.macro"
+          ],
+          "pseudocommand": [
+            "support.function"
+          ],
+          "function": [
+            "entity.name.function"
+          ],
+          "label": [
+            "entity.name.label"
+          ],
+          "number": [
+            "constant.numeric"
+          ],
+          "variable": [
+            "variable"
+          ]
         }
       }
     ],
@@ -442,30 +460,102 @@
     ],
     "menus": {
       "commandPalette": [
-        { "command": "c64u.uploadAndRun", "when": "c64u.enabled" },
-        { "command": "c64u.fileBrowser", "when": "c64u.enabled" },
-        { "command": "c64u.machineControl", "when": "c64u.enabled" },
-        { "command": "c64u.upload", "when": "c64u.enabled" },
-        { "command": "c64u.download", "when": "c64u.enabled" },
-        { "command": "c64u.mkdir", "when": "c64u.enabled" },
-        { "command": "c64u.remove", "when": "c64u.enabled" },
-        { "command": "c64u.move", "when": "c64u.enabled" },
-        { "command": "c64u.copy", "when": "c64u.enabled" },
-        { "command": "c64u.list", "when": "c64u.enabled" },
-        { "command": "c64u.fileInfo", "when": "c64u.enabled" },
-        { "command": "c64u.treeview.refresh", "when": "false" },
-        { "command": "c64u.treeview.navigate", "when": "false" },
-        { "command": "c64u.treeview.delete", "when": "false" },
-        { "command": "c64u.treeview.rename", "when": "false" },
-        { "command": "c64u.treeview.copy", "when": "false" },
-        { "command": "c64u.treeview.createDir", "when": "false" },
-        { "command": "c64u.treeview.createDisk", "when": "false" },
-        { "command": "c64u.treeview.mount", "when": "false" },
-        { "command": "c64u.treeview.unmount", "when": "false" },
-        { "command": "c64u.treeview.download", "when": "false" },
-        { "command": "c64u.treeview.upload", "when": "false" },
-        { "command": "c64u.treeview.runPrg", "when": "false" },
-        { "command": "c64u.treeview.openFile", "when": "false" }
+        {
+          "command": "c64u.uploadAndRun",
+          "when": "c64u.enabled"
+        },
+        {
+          "command": "c64u.fileBrowser",
+          "when": "c64u.enabled"
+        },
+        {
+          "command": "c64u.machineControl",
+          "when": "c64u.enabled"
+        },
+        {
+          "command": "c64u.upload",
+          "when": "c64u.enabled"
+        },
+        {
+          "command": "c64u.download",
+          "when": "c64u.enabled"
+        },
+        {
+          "command": "c64u.mkdir",
+          "when": "c64u.enabled"
+        },
+        {
+          "command": "c64u.remove",
+          "when": "c64u.enabled"
+        },
+        {
+          "command": "c64u.move",
+          "when": "c64u.enabled"
+        },
+        {
+          "command": "c64u.copy",
+          "when": "c64u.enabled"
+        },
+        {
+          "command": "c64u.list",
+          "when": "c64u.enabled"
+        },
+        {
+          "command": "c64u.fileInfo",
+          "when": "c64u.enabled"
+        },
+        {
+          "command": "c64u.treeview.refresh",
+          "when": "false"
+        },
+        {
+          "command": "c64u.treeview.navigate",
+          "when": "false"
+        },
+        {
+          "command": "c64u.treeview.delete",
+          "when": "false"
+        },
+        {
+          "command": "c64u.treeview.rename",
+          "when": "false"
+        },
+        {
+          "command": "c64u.treeview.copy",
+          "when": "false"
+        },
+        {
+          "command": "c64u.treeview.createDir",
+          "when": "false"
+        },
+        {
+          "command": "c64u.treeview.createDisk",
+          "when": "false"
+        },
+        {
+          "command": "c64u.treeview.mount",
+          "when": "false"
+        },
+        {
+          "command": "c64u.treeview.unmount",
+          "when": "false"
+        },
+        {
+          "command": "c64u.treeview.download",
+          "when": "false"
+        },
+        {
+          "command": "c64u.treeview.upload",
+          "when": "false"
+        },
+        {
+          "command": "c64u.treeview.runPrg",
+          "when": "false"
+        },
+        {
+          "command": "c64u.treeview.openFile",
+          "when": "false"
+        }
       ],
       "view/title": [
         {

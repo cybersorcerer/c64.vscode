@@ -10,4 +10,6 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 !binaries/**
-node_modules/**
+node_modules/**/test/**
+node_modules/**/*.md
+node_modules/**/.github/**
