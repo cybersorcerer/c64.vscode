@@ -2,7 +2,7 @@
   "name": "c64-vscode",
   "displayName": "C64 Assembler Development",
   "description": "Complete C64 development environment with Kick Assembler, LSP support, VICE emulator, and C64 Ultimate integration",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "publisher": "cybersorcerer",
   "license": "Apache-2.0",
   "repository": {
