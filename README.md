@@ -16,7 +16,7 @@ All syntax highlighting and code analysis comes from the **kickass_ls** language
 
 ### Kick Assembler Integration
 
-- Assemble `.asm` and `.s` files with Kick Assembler
+- Assemble `.asm` and `.kasm` files with Kick Assembler
 - Errors and warnings appear in the Problems panel
 - Detailed output in the "Kick Assembler" output channel
 - 60-second timeout protection for long-running builds
@@ -175,11 +175,20 @@ All shortcuts are active when editing Kick Assembler files.
 | `Ctrl+Shift+U` | `Cmd+Shift+U` | Assemble, Upload and Run on C64 Ultimate |
 | `Ctrl+Shift+B` | `Cmd+Shift+B` | C64U File Browser |
 
+## Supported File Extensions
+
+| Extension | Description |
+| --------- | ----------- |
+| `.asm` | Standard assembler file — the language server activates for all `.asm` files regardless of the detected language |
+| `.kasm` | Kick Assembler file — always recognized as Kick Assembler, use this to avoid conflicts with other assembler extensions (e.g. HLASM) |
+
+If another extension claims the `.asm` file association, the language server still activates via file pattern matching. For guaranteed Kick Assembler detection, rename your files to `.kasm`.
+
 ## Usage
 
 ### Basic Workflow
 
-1. Open a `.asm` or `.s` file — syntax highlighting and diagnostics activate automatically
+1. Open a `.asm` or `.kasm` file — syntax highlighting and diagnostics activate automatically
 2. Assemble with `Ctrl+Shift+A` — errors appear in the Problems panel
 3. Run with `Ctrl+Shift+R` — launches VICE with your program
 4. Or combine with `Ctrl+Shift+X` — assembles and runs in one step
@@ -246,8 +255,10 @@ Releases are built automatically via GitHub Actions when a version tag is pushed
 
 ### Language Server Not Starting
 
-1. Check that `kickass_ls` is installed and in PATH, or use the bundled binary
-2. Or configure an explicit path:
+1. Make sure your file has a `.asm` or `.kasm` extension
+2. If another extension claims `.asm` files, rename to `.kasm` or change the language mode to "Kick Assembler" in the VS Code status bar
+3. Check that `kickass_ls` is installed and in PATH, or use the bundled binary
+4. Or configure an explicit path:
 
    ```json
    { "c64.kickassLsBinary": "/usr/local/bin/kickass_ls" }
