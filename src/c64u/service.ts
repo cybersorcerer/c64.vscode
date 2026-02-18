@@ -41,6 +41,15 @@ export class C64UService {
         await this.fileBrowserProvider.show();
     }
 
+    async executeMachineAction(action: string): Promise<void> {
+        const result = await executeC64U(['machine', action]);
+        if (result.success) {
+            vscode.window.showInformationMessage(`Machine ${action} executed`);
+        } else {
+            vscode.window.showErrorMessage(`Machine control failed: ${result.error}`);
+        }
+    }
+
     async showMachineControl(): Promise<void> {
         const actions = [
             { label: '$(debug-restart) Reset', value: 'reset' },

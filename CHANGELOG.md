@@ -2,12 +2,32 @@
 
 All notable changes to the "c64-vscode" extension will be documented in this file.
 
-## [Unreleased]
+## [0.5.3] - 2026-02-18
+
+### Added
+
+- **Machine Control in Tree View** — Machine section as a root node in the C64 Ultimate Tree View with directly clickable actions: Reset, Reboot, Pause, Resume, Power Off — no QuickPick menu required.
+- **Compile & Run button in Tree View title bar** — `$(cloud-upload)` button for Assemble, Upload and Run directly from the C64 Ultimate panel.
+- **Unmount Disk Image** — Renamed from "Unmount Drive" for clarity.
+- **Updated kickass_ls** — Bundles the latest version of the kickass_ls language server.
+
+### Changed
+
+- C64 Ultimate Tree View now has two root sections: **Machine** (with control actions) and **File System** (existing file browser).
+
+## [0.5.2] - 2026-02-18
 
 ### Added
 
 - **Language Server Settings UI** — All kickass_ls diagnostics and formatting options are now configurable via VS Code settings (search for "kickass_ls"). Changes take effect immediately without reload.
 - **GitHub Actions Release Workflow** — Automatically builds platform-specific VSIX files when a version tag is pushed.
+- **C64U toggle** — All C64 Ultimate commands, keybindings, Tree View and Activity Bar icon are now toggleable via the `c64u.enabled` setting (default: false).
+- **`.kasm` file extension** — Kick Assembler-specific extension to avoid conflicts with other assembler extensions (e.g. HLASM).
+
+### Fixed
+
+- **Extension activation** — Fixed VSIX packaging issue where `vscode-languageclient` dependency was excluded, causing the extension to silently fail to activate.
+- **Language Server activation** — Added pattern-based document selectors (`**/*.asm`, `**/*.kasm`) to ensure the language server activates even when another extension claims the `.asm` file association.
 
 ## [0.3.0] - 2026-02-07
 

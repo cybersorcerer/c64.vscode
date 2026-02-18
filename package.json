@@ -2,7 +2,7 @@
   "name": "c64-vscode",
   "displayName": "C64 Assembler Development",
   "description": "Complete C64 development environment with Kick Assembler, LSP support, VICE emulator, and C64 Ultimate integration",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "publisher": "cybersorcerer",
   "license": "Apache-2.0",
   "repository": {
@@ -201,7 +201,7 @@
       },
       {
         "command": "c64u.treeview.unmount",
-        "title": "Unmount Drive",
+        "title": "Unmount Disk Image",
         "icon": "$(debug-disconnect)"
       },
       {
@@ -218,6 +218,11 @@
         "command": "c64u.treeview.runPrg",
         "title": "Run Program",
         "icon": "$(play)"
+      },
+      {
+        "command": "c64u.treeview.machine",
+        "title": "Machine Control",
+        "icon": "$(vm)"
       },
       {
         "command": "c64u.treeview.openFile",
@@ -555,11 +560,20 @@
         {
           "command": "c64u.treeview.openFile",
           "when": "false"
+        },
+        {
+          "command": "c64u.treeview.machine",
+          "when": "false"
         }
       ],
       "view/title": [
         {
           "command": "c64u.treeview.refresh",
+          "when": "view == c64u.fileExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "c64u.uploadAndRun",
           "when": "view == c64u.fileExplorer",
           "group": "navigation"
         },

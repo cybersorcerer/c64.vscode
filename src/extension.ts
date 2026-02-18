@@ -136,6 +136,12 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    context.subscriptions.push(
+        vscode.commands.registerCommand('c64u.treeview.machine', async (action: string) => {
+            await c64uService!.executeMachineAction(action);
+        })
+    );
+
     // Start Language Server first
     startLanguageServer(context);
 
@@ -313,7 +319,10 @@ function startLanguageServer(context: vscode.ExtensionContext) {
         },
         initializationOptions: {
             settings: { kickass_ls: getKickassLsSettings() }
-        }
+        },
+        outputChannelName: 'Kick Assembler Language Server',
+        revealOutputChannelOn: 1, // RevealOutputChannelOn.Info
+        traceOutputChannel: vscode.window.createOutputChannel('Kick Assembler Language Server (Trace)')
     };
 
     // Create and start the language client

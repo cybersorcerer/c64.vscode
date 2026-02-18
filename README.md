@@ -31,7 +31,9 @@ All syntax highlighting and code analysis comes from the **kickass_ls** language
 
 Full integration with C64 Ultimate hardware via the `c64u` CLI tool:
 
-- **Tree View File Explorer** in the Activity Bar with drag-and-drop support
+- **Tree View** in the Activity Bar with two sections:
+  - **Machine** — directly clickable Reset, Reboot, Pause, Resume, Power Off actions
+  - **File System** — full file browser with drag-and-drop support
 - Open text files (`.asm`, `.bas`, `.seq`, `.txt`, `.cfg`, `.inc`, `.sym`, `.dbg`) directly in the editor — changes are automatically uploaded back to the C64 Ultimate on save
 - Open binary files (`.prg`, `.crt`, `.bin`, `.tap`, `.t64`, `.rel`, `.ko`) in the Hex Editor
 - Browse and navigate the C64 Ultimate filesystem
@@ -39,7 +41,6 @@ Full integration with C64 Ultimate hardware via the `c64u` CLI tool:
 - Create directories and disk images (d64, d71, d81, g64, dnp)
 - Mount/unmount disk images on IEC drives
 - Run `.prg` files directly on hardware
-- Machine control (reset, reboot, pause, resume)
 - Interactive QuickPick-based file browser
 
 ## Prerequisites
@@ -195,13 +196,14 @@ If another extension claims the `.asm` file association, the language server sti
 
 ### C64 Ultimate Workflow
 
-1. Enable C64 Ultimate in settings and configure host/port
-2. Use `Ctrl+Shift+U` to assemble, upload, and run on real hardware
-3. Use the Tree View in the Activity Bar to browse files on the C64 Ultimate
-4. Click text files to edit them — changes are automatically uploaded on save
-5. Click binary files to view them in the Hex Editor
-6. Right-click for context actions (rename, copy, delete, mount, run)
-7. Drag and drop files to move them between directories
+1. Enable C64 Ultimate in settings (`c64u.enabled`) and configure host/port
+2. Use `Ctrl+Shift+U` or the `$(cloud-upload)` button in the Tree View title bar to assemble, upload, and run on real hardware
+3. Use the **Machine** section in the Tree View to reset, reboot, pause or power off the C64 directly
+4. Use the **File System** section to browse files on the C64 Ultimate
+5. Click text files to edit them — changes are automatically uploaded on save
+6. Click binary files to view them in the Hex Editor
+7. Right-click for context actions (rename, copy, delete, mount, run)
+8. Drag and drop files to move them between directories
 
 ## Commands
 
@@ -230,10 +232,20 @@ Access via Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`):
 
 - **Open in Editor** — Open text/binary files in appropriate editor
 - **Run Program** — Run `.prg` files on C64 Ultimate
-- **Mount/Unmount** — Mount disk images on IEC drives
+- **Mount / Unmount Disk Image** — Mount disk images on IEC drives
 - **Download/Upload** — Transfer files to/from local machine
 - **Rename/Copy/Delete** — File management
 - **New Directory / Create Disk Image** — Create new items
+
+### Tree View Machine Section
+
+Click directly to execute without confirmation dialog:
+
+- **Reset** — Soft reset the C64
+- **Reboot** — Full reboot
+- **Pause** — Pause the machine
+- **Resume** — Resume from pause
+- **Power Off** — Power off the C64 Ultimate
 
 ## Building with Bundled Binaries
 

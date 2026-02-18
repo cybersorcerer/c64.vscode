@@ -3,6 +3,15 @@ import * as path from 'path';
 import { C64UClient } from './client';
 import { C64UFileOpenManager } from './file-open-manager';
 
+// Machine control actions shown as direct tree items
+const MACHINE_ACTIONS: { label: string; action: string; icon: string; description: string }[] = [
+    { label: 'Reset',     action: 'reset',    icon: 'debug-restart',  description: 'Soft reset' },
+    { label: 'Reboot',    action: 'reboot',   icon: 'refresh',        description: 'Full reboot' },
+    { label: 'Pause',     action: 'pause',    icon: 'debug-pause',    description: 'Pause machine' },
+    { label: 'Resume',    action: 'resume',   icon: 'debug-continue', description: 'Resume machine' },
+    { label: 'Power Off', action: 'poweroff', icon: 'circle-slash',   description: 'Power off' },
+];
+
 export class C64UFileSystemProvider implements vscode.TreeDataProvider<C64UTreeItem>, vscode.TreeDragAndDropController<C64UTreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<C64UTreeItem | undefined | null | void> = new vscode.EventEmitter<C64UTreeItem | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<C64UTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
@@ -41,14 +50,36 @@ export class C64UFileSystemProvider implements vscode.TreeDataProvider<C64UTreeI
             )];
         }
 
+        // Root level: show Machine section and File System section
+        if (!element) {
+            return [
+                new C64UTreeItem('Machine', vscode.TreeItemCollapsibleState.Expanded, 'machine-root', '__machine__'),
+                new C64UTreeItem('File System', vscode.TreeItemCollapsibleState.Expanded, 'filesystem-root', '/'),
+            ];
+        }
+
+        // Machine section children: individual machine actions
+        if (element.itemType === 'machine-root') {
+            return MACHINE_ACTIONS.map(a => new C64UTreeItem(
+                a.label,
+                vscode.TreeItemCollapsibleState.None,
+                'machine-action',
+                `__machine__/${a.action}`,
+                undefined,
+                a.icon,
+                a.description
+            ));
+        }
+
+        // File System section children: existing file browsing logic
         try {
-            const targetPath = element ? element.resourcePath : '/';
+            const targetPath = element.itemType === 'filesystem-root' ? '/' : element.resourcePath;
             console.log(`[C64U TreeView] Loading children for: ${targetPath}`);
             const files = await this.client.listFiles(targetPath);
 
             // Add parent directory entry if not at root
             const items: C64UTreeItem[] = [];
-            if (targetPath !== '/' && !element) {
+            if (targetPath !== '/') {
                 const parentPath = targetPath.substring(0, targetPath.lastIndexOf('/')) || '/';
                 items.push(new C64UTreeItem(
                     '..',
@@ -90,7 +121,7 @@ export class C64UFileSystemProvider implements vscode.TreeDataProvider<C64UTreeI
             }
 
             // If directory is empty, show a friendly message
-            if (items.length === 0 && targetPath !== '/') {
+            if (items.length === 0) {
                 console.log(`[C64U TreeView] Directory ${targetPath} is empty`);
                 return [new C64UTreeItem(
                     'Empty directory',
@@ -196,7 +227,8 @@ export class C64UFileSystemProvider implements vscode.TreeDataProvider<C64UTreeI
         // Move each dragged item
         for (const item of draggedItems) {
             // Skip special items
-            if (item.itemType === 'parent' || item.itemType === 'message' || item.itemType === 'error') {
+            if (item.itemType === 'parent' || item.itemType === 'message' || item.itemType === 'error' ||
+                item.itemType === 'machine-root' || item.itemType === 'machine-action' || item.itemType === 'filesystem-root') {
                 continue;
             }
 
@@ -293,7 +325,7 @@ export class C64UFileSystemProvider implements vscode.TreeDataProvider<C64UTreeI
     }
 }
 
-type C64UItemType = 'directory' | 'diskimage' | 'diskimage-gcr' | 'program' | 'sid' | 'cartridge' | 'textfile' | 'binaryfile' | 'file' | 'parent' | 'message' | 'error';
+type C64UItemType = 'directory' | 'diskimage' | 'diskimage-gcr' | 'program' | 'sid' | 'cartridge' | 'textfile' | 'binaryfile' | 'file' | 'parent' | 'message' | 'error' | 'machine-root' | 'machine-action' | 'filesystem-root';
 
 export class C64UTreeItem extends vscode.TreeItem {
     constructor(
@@ -301,14 +333,26 @@ export class C64UTreeItem extends vscode.TreeItem {
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
         public readonly itemType: C64UItemType,
         public readonly resourcePath: string,
-        public readonly fileSize?: number
+        public readonly fileSize?: number,
+        customIcon?: string,
+        description?: string
     ) {
         super(label, collapsibleState);
 
         this.contextValue = itemType;
         this.tooltip = this.buildTooltip();
-        this.iconPath = this.getIcon();
-        this.description = this.getDescription();
+        this.iconPath = customIcon ? new vscode.ThemeIcon(customIcon) : this.getIcon();
+        this.description = description ?? this.getDescription();
+
+        // Machine actions execute on click
+        if (itemType === 'machine-action') {
+            const action = resourcePath.replace('__machine__/', '');
+            this.command = {
+                command: 'c64u.treeview.machine',
+                title: label,
+                arguments: [action]
+            };
+        }
 
         // Make clickable items that navigate
         if (itemType === 'directory' || itemType === 'parent') {
@@ -317,7 +361,10 @@ export class C64UTreeItem extends vscode.TreeItem {
                 title: 'Navigate',
                 arguments: [this]
             };
-        } else if (C64UFileOpenManager.isOpenableFile(label)) {
+        } else if (itemType === 'filesystem-root') {
+            // File System root navigates to /
+            this.command = undefined;
+        } else if (C64UFileOpenManager.isOpenableFile(label) && itemType !== 'machine-action') {
             this.command = {
                 command: 'c64u.treeview.openFile',
                 title: 'Open File',
@@ -330,6 +377,15 @@ export class C64UTreeItem extends vscode.TreeItem {
         if (this.itemType === 'message' || this.itemType === 'error') {
             return this.label;
         }
+        if (this.itemType === 'machine-root') {
+            return 'C64 Ultimate Machine Control';
+        }
+        if (this.itemType === 'machine-action') {
+            return `Execute: ${this.label}`;
+        }
+        if (this.itemType === 'filesystem-root') {
+            return 'C64 Ultimate File System';
+        }
 
         let tooltip = `Path: ${this.resourcePath}`;
         if (this.fileSize !== undefined) {
@@ -341,6 +397,12 @@ export class C64UTreeItem extends vscode.TreeItem {
 
     private getIcon(): vscode.ThemeIcon {
         switch (this.itemType) {
+            case 'machine-root':
+                return new vscode.ThemeIcon('vm');
+            case 'machine-action':
+                return new vscode.ThemeIcon('gear');
+            case 'filesystem-root':
+                return new vscode.ThemeIcon('server');
             case 'directory':
                 return new vscode.ThemeIcon('folder');
             case 'parent':
